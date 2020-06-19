@@ -78,6 +78,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     df['DX_Q'] = f11
     df['RX'] = f14
     df['RX_Q'] = f15
+    '''
     df['TX'] = df['DX'] + df['RX']
     df['TT'] = df['IM'] + df['TX']
     df['TX_Q'] = df['DX_Q'] + df['RX_Q']
@@ -98,7 +99,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     df['SITC-3'] = [hstositc.get(x, "NA")[:3] for x in df.f2]
     df['SITC-4'] = [hstositc.get(x, "NA")[:4] for x in df.f2]
     df['SITC-5'] = [hstositc.get(x, "NA") for x in df.f2]
-
+    '''
     df['reporting_time'] = f'{year}{month}'
     #print(df)
     return df

@@ -48,7 +48,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     #print(df['f2'].dtype)
     # select transaction type 1 (HS-8digit) only
     #print(df)
-
+    '''
     HS8only = df.f1.isin([1])
     df = df[HS8only]
 
@@ -72,7 +72,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     df['SITC-3'] = [hstositc.get(str(x), "NA")[:3] for x in df.f2]
     df['SITC-4'] = [hstositc.get(str(x), "NA")[:4] for x in df.f2]
     df['SITC-5'] = [hstositc.get(str(x), "NA") for x in df.f2]
-
+    '''
     df['reporting_time'] = f'{year}{month}'
 
     return df

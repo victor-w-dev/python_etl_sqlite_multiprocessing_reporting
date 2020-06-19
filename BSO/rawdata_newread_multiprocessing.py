@@ -14,6 +14,7 @@ Define functions to get raw data from the 3 files, then merge in dataframe
 import pandas as pd
 import numpy as np
 from .time_analysis import time_decorator
+import multiprocessing as mp,os
 #from .merge import hstositc_dict
 
 rawdata_folder="C&SD_raw_data"
@@ -34,6 +35,24 @@ def read_large_file(file_handler):
                row[192:210],
                row[210:228])
 
+def process_wrapper(chunkStart, chunkSize, file_path):
+    with open(file_path) as f:
+        f.seek(chunkStart)
+        lines = f.read(chunkSize).splitlines()
+        for line in lines:
+            row = line.strip()
+
+            return [row[0],
+                   row[1:9],
+                   row[9:12],
+                   row[48:66],
+                   row[66:84],
+                   row[120:138],
+                   row[138:156],
+                   row[192:210],
+                   row[210:228]]
+
+
 @time_decorator
 def get_hsccit(year, month=12, path=rawdata_folder):
     try:
@@ -51,6 +70,44 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     #it will be faster than using pd.read_fwf as this pd.read_fwf function
     #seem need to
     #import all columns
+    #init objects
+
+    def chunkify(fname,size=1024*1024):
+        fileEnd = os.path.getsize(fname)
+        #print(fileEnd)
+        with open(fname,'rb') as f:
+            chunkEnd = f.tell()
+            #print(chunkEnd)
+
+            while True:
+                #print('hi')
+                chunkStart = chunkEnd
+                f.seek(size,1)
+                f.readline()
+                chunkEnd = f.tell()
+                yield chunkStart, chunkEnd - chunkStart
+                if chunkEnd > fileEnd:
+                    break
+
+
+    pool = mp.Pool(processes = mp.cpu_count())
+    jobs = []
+
+    #create jobs
+    for chunkStart,chunkSize in chunkify(file_path):
+        jobs.append(pool.apply_async(process_wrapper,(chunkStart,chunkSize, file_path)))
+
+    #wait for all jobs to finish
+    for job in jobs:
+        print(job.get())
+
+    #clean up
+    pool.close()
+    pool.join()
+
+
+
+    '''
     with open(file_path, 'r', encoding='utf-8') as file_object:
         #lines = file_object.readlines()
         #pass
@@ -66,7 +123,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
         #print(np.array(ls))
 
 
-    '''
+
     f1,f2,f3,f6,f7,f10,f11,f14,f15 = ([] for _ in range(9))
 
     for i, line in enumerate(lines):
@@ -109,7 +166,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     '''
     #df['reporting_time'] = f'{year}{month}'
     #print(df)
-    return df
+    #return df
 
 #@time_decorator
 def get_hscoit(year, month=12, path=rawdata_folder):
