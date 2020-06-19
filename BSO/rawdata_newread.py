@@ -20,7 +20,21 @@ rawdata_folder="C&SD_raw_data"
 # conversion of hs to SITC
 #hstositc_dict = get_hstositc_code()
 
-#@time_decorator
+def read_large_file(file_handler):
+    for line in file_handler:
+        row = line.strip()
+
+        yield [int(row[0]),str(row[1:9]),
+        int(row[9:12]),
+        int(row[48:66]),
+        int(row[66:84]),
+        int(row[120:138]),
+        int(row[138:156]),
+        int(row[192:210]),
+        int(row[210:228])]
+
+
+@time_decorator
 def get_hsccit(year, month=12, path=rawdata_folder):
     try:
         file_path = f'{path}/{year}{month}/hsccit.dat'
@@ -38,8 +52,15 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     #seem need to
     #import all columns
     with open(file_path, 'r', encoding='utf-8') as file_object:
-        lines = file_object.readlines()
+        #lines = file_object.readlines()
+        #pass
+        #ls=[]
+        #for l in read_large_file(file_object):
+            #print(l)
+        ls=list(read_large_file(file_object))
+        print(np.array(ls))
 
+    '''
     f1,f2,f3,f6,f7,f10,f11,f14,f15 = ([] for _ in range(9))
 
     for i, line in enumerate(lines):
@@ -63,7 +84,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     df['TT'] = df['IM'] + df['TX']
     df['TX_Q'] = df['DX_Q'] + df['RX_Q']
     df['TT_Q'] = df['TX_Q'] + df['IM_Q']
-    '''
+
     # select transaction type 1 (HS-8digit) only
     HS8only = df.f1.isin([1])
     #print(df)
@@ -80,9 +101,9 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     df['SITC-4'] = [hstositc_dict.get(x, "NA")[:4] for x in df.f2]
     df['SITC-5'] = [hstositc_dict.get(x, "NA") for x in df.f2]
     '''
-    df['reporting_time'] = f'{year}{month}'
+    #df['reporting_time'] = f'{year}{month}'
     #print(df)
-    return df
+    #return df
 
 #@time_decorator
 def get_hscoit(year, month=12, path=rawdata_folder):
