@@ -18,7 +18,7 @@ cursor = con.cursor()
 def read_file(file_handler, table):
     for line in file_handler:
         row = line.strip()
-        if table:'hsccit':
+        if table=='hsccit':
             yield [(row[0]),
                    row[1:9],
                    row[9:12],
@@ -35,7 +35,7 @@ def read_file(file_handler, table):
                    row[192:210],
                    row[210:228]]
 
-        if table:'hscoit':
+        if table=='hscoit':
             yield [(row[0]),
                    row[1:9],
                    row[9:12],
@@ -44,7 +44,7 @@ def read_file(file_handler, table):
                    row[48:66],
                    row[66:84]]
 
-        if table:'hscoccit':
+        if table=='hscoccit':
             yield [(row[0]),
                    row[1:9],
                    row[9:12],
@@ -100,7 +100,7 @@ class TradeDB:
         "ReExportValueMonthly INTEGER," #5
         "ReExportQuantityMonthly INTEGER," #6
         "ReExportValueYTD INTEGER," #7
-        "ReExportQuantityYTD INTEGER" #8
+        "ReExportQuantityYTD INTEGER," #8
         "ReportPeriod TEXT," #9
         "UpdatedDate TIMESTAMP)" #10
         )
@@ -142,7 +142,7 @@ class TradeDB:
         #import all columns
         print("db instace start")
         with open(file_path, 'r', encoding='utf-8') as file_object:
-            for line in read_file(file_object):
+            for line in read_file(file_object,table):
                 #print(type(i))
                 line = line + [f'{year}{month}'] + [datetime.datetime.now()]
                 #print(line)
@@ -353,10 +353,13 @@ if __name__ == '__main__':
 
     @time_decorator
     def importdataDB():
-        for yr in range(2015,2016):
+        for yr in range(2015,2020):
             for m in range(1,13):
                 try:
-                    db.insert_DB(yr,'hsccit', month=f"{m:02}")
+                    #db.insert_DB('hsccit',yr,month=f"{m:02}")
+                    #db.insert_DB('hscoit',yr,month=f"{m:02}")
+                    db.insert_DB('hscoccit',yr,month=f"{m:02}")
+
                 except FileNotFoundError:
                     print(f"{yr}{m:02} doese not exist\n")
     importdataDB()
