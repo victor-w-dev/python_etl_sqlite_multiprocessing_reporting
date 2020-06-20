@@ -15,25 +15,44 @@ print(con)
 
 cursor = con.cursor()
 '''
-def read_file(file_handler):
+def read_file(file_handler, table):
     for line in file_handler:
         row = line.strip()
+        if table:'hsccit':
+            yield [(row[0]),
+                   row[1:9],
+                   row[9:12],
+                   row[12:30],
+                   row[30:48],
+                   row[48:66],
+                   row[66:84],
+                   row[84:102],
+                   row[102:120],
+                   row[120:138],
+                   row[138:156],
+                   row[156:174],
+                   row[174:192],
+                   row[192:210],
+                   row[210:228]]
 
-        yield [(row[0]),
-               row[1:9],
-               row[9:12],
-               row[12:30],
-               row[30:48],
-               row[48:66],
-               row[66:84],
-               row[84:102],
-               row[102:120],
-               row[120:138],
-               row[138:156],
-               row[156:174],
-               row[174:192],
-               row[192:210],
-               row[210:228]]
+        if table:'hscoit':
+            yield [(row[0]),
+                   row[1:9],
+                   row[9:12],
+                   row[12:30],
+                   row[30:48],
+                   row[48:66],
+                   row[66:84]]
+
+        if table:'hscoccit':
+            yield [(row[0]),
+                   row[1:9],
+                   row[9:12],
+                   row[12:15],
+                   row[15:33],
+                   row[33:51],
+                   row[51:69],
+                   row[69:87]]
 
 @time_decorator
 class TradeDB:
@@ -41,7 +60,7 @@ class TradeDB:
         self.con = pyo.connect(db_path+".db")
         self.cursor = self.con.cursor()
 
-        create_HSCCIT_query = ("CREATE TABLE IF NOT EXISTS HSCCIT(ID INTEGER PRIMARY KEY,"
+        create_HSCCIT_query = ("CREATE TABLE IF NOT EXISTS hsccit(ID INTEGER PRIMARY KEY,"
         "TransactionType INTEGER," #1
         "HScode TEXT," #2
         "CountryConsignmentCode INTEGER," #3
@@ -61,26 +80,29 @@ class TradeDB:
         "UpdatedDate TIMESTAMP)" #17
         )
 
-        create_HSCOIT_query = ("CREATE TABLE IF NOT EXISTS HSCOIT(ID INTEGER PRIMARY KEY,"
+        create_HSCOIT_query = ("CREATE TABLE IF NOT EXISTS hscoit(ID INTEGER PRIMARY KEY,"
         "TransactionType INTEGER," #1
         "HScode TEXT," #2
         "CountryOriginCode INTEGER," #3
         "ImportByOriginValueMonthly INTEGER," #4
         "ImportByOriginQuantityMonthly INTEGER," #5
         "ImportByOriginValueYTD INTEGER," #6
-        "ImportByOriginQuantityYTD INTEGER)" #7
+        "ImportByOriginQuantityYTD INTEGER," #7
+        "ReportPeriod TEXT," #8
+        "UpdatedDate TIMESTAMP)" #9
         )
 
-        create_HSCOCCIT_query = ("CREATE TABLE IF NOT EXISTS HSCOCCIT(ID INTEGER PRIMARY KEY,"
+        create_HSCOCCIT_query = ("CREATE TABLE IF NOT EXISTS hscoccit(ID INTEGER PRIMARY KEY,"
         "TransactionType INTEGER," #1
         "HScode TEXT," #2
         "CountryOriginCode INTEGER," #3
         "CountryDestinationCode INTEGER," #4
-
         "ReExportValueMonthly INTEGER," #5
         "ReExportQuantityMonthly INTEGER," #6
         "ReExportValueYTD INTEGER," #7
-        "ReExportQuantityYTD INTEGER)" #8
+        "ReExportQuantityYTD INTEGER" #8
+        "ReportPeriod TEXT," #9
+        "UpdatedDate TIMESTAMP)" #10
         )
 
         self.cursor.execute(create_HSCCIT_query)
@@ -100,14 +122,14 @@ class TradeDB:
         return rows
 
     @time_decorator
-    def insert_hsccit(self, year, month=12, path=rawdata_folder):
+    def insert_DB(self, table, year, month=12, path=rawdata_folder):
         period = f'{year}{month}'
         try:
-            file_path = f'{path}/{period}/hsccit.dat'
+            file_path = f'{path}/{period}/{table}.dat'
             print(path)
             open(file_path)
         except:
-            file_path = f'{path}/{period}/hsccit.txt'
+            file_path = f'{path}/{period}/{table}.txt'
             open(file_path)
             print(f"Import from txt file: {file_path}")
         else:
@@ -125,13 +147,13 @@ class TradeDB:
                 line = line + [f'{year}{month}'] + [datetime.datetime.now()]
                 #print(line)
                 #print(len(line))
-                self.insert('HSCCIT',*line)
+                self.insert_line(table,*line)
             self.con.commit()
 
 
 
-    def insert(self, table, *values):
-        if table == "HSCCIT":
+    def insert_line(self, table, *values):
+        if table == "hsccit":
             column_str = """TransactionType, HScode, CountryConsignmentCode,
                             ImportValueMonthly,
                             ImportQuantityMonthly,
@@ -149,6 +171,31 @@ class TradeDB:
                             UpdatedDate
                             """
             insert_str = ("?, " * 17)[:-2]
+
+        if table == "hscoit":
+            column_str = """TransactionType, HScode,
+                            CountryOriginCode,
+                            ImportByOriginValueMonthly,
+                            ImportByOriginQuantityMonthly,
+                            ImportByOriginValueYTD,
+                            ImportByOriginQuantityYTD,
+                            ReportPeriod,
+                            UpdatedDate
+                            """
+            insert_str = ("?, " * 9)[:-2]
+
+        if table == "hscoccit":
+            column_str = """TransactionType, HScode,
+                            CountryOriginCode,
+                            CountryDestinationCode,
+                            ReExportValueMonthly,
+                            ReExportQuantityMonthly,
+                            ReExportValueYTD,
+                            ReExportQuantityYTD,
+                            ReportPeriod,
+                            UpdatedDate
+                            """
+            insert_str = ("?, " * 10)[:-2]
 
         sql=(f"INSERT INTO {table} ({column_str}) VALUES ({insert_str})")
         #print(f"sql query: {sql}")
@@ -309,7 +356,7 @@ if __name__ == '__main__':
         for yr in range(2015,2016):
             for m in range(1,13):
                 try:
-                    db.insert_hsccit(yr, month=f"{m:02}")
+                    db.insert_DB(yr,'hsccit', month=f"{m:02}")
                 except FileNotFoundError:
                     print(f"{yr}{m:02} doese not exist\n")
     importdataDB()
