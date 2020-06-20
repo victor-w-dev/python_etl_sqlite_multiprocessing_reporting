@@ -4,7 +4,7 @@ from tkinter import messagebox
 import sqlite3 as pyo
 
 con = pyo.connect("trades_database")
-#print(con)
+print(con)
 
 cursor = con.cursor()
 
@@ -13,7 +13,28 @@ class TradeDB:
     def __init__(self):
         self.con = pyo.connect("trades_database.db")
         self.cursor = con.cursor()
-        self.cursor.execute("CREATE TABLE IF NOT EXISTS books(id INTEGER PRIMARY KEY, title TEXT, author TEXT, isbn INTEGER)")
+
+        create_table_query = ("CREATE TABLE IF NOT EXISTS HSCCIT(id INTEGER PRIMARY KEY,"
+        "TransactionType TEXT,"
+        "HScode TEXT,"
+        "Countrycode INTEGER,"
+        "ImportValueMonthly INTEGER,"
+        "ImportQuantityMonthly INTEGER,"
+        "ImportValueYTD INTEGER,"
+        "ImportQuantityYTD INTEGER,"
+        "DomesticExportValueMonthly INTEGER,"
+        "DomesticExportQuantityMonthly INTEGER,"
+        "DomesticExportValueYTD INTEGER,"
+        "DomesticExportQuantityYTD INTEGER,"
+        "ReExportValueMonthly INTEGER,"
+        "ReExportQuantityMonthly INTEGER,"
+        "ReExportValueYTD INTEGER,"
+        "ReExportQuantityYTD INTEGER)"
+        )
+
+
+
+        self.cursor.execute(create_table_query)
         self.con.commit()
         print("You have connected to the  database")
         print(con)
