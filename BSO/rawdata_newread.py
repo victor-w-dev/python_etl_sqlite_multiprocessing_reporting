@@ -20,7 +20,7 @@ rawdata_folder="C&SD_raw_data"
 # conversion of hs to SITC
 #hstositc_dict = get_hstositc_code()
 
-def read_large_file(file_handler):
+def read_file(file_handler):
     for line in file_handler:
         row = line.strip()
 
@@ -53,13 +53,17 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     #import all columns
     with open(file_path, 'r', encoding='utf-8') as file_object:
         #lines = file_object.readlines()
+        #print(lines[0])
         #pass
         #ls=[]
         #for l in read_large_file(file_object):
             #print(l)
         #labels = ['f1','f2','f3','IM','IM_Q','DX','DX_Q','RX','RX_Q']
-        ls=list(read_large_file(file_object))
-        df = pd.DataFrame(ls,columns=['f1','f2','f3','IM','IM_Q','DX','DX_Q','RX','RX_Q'])
+        #ls=list(read_file(file_object))
+        print(read_file(file_object))
+        return read_file(file_object)
+        #print(next(a))
+        #df = pd.DataFrame(ls,columns=['f1','f2','f3','IM','IM_Q','DX','DX_Q','RX','RX_Q'])
         #df[[labels[0]]+labels[2:]] = df[[labels[0]]+labels[2:]].apply(pd.to_numeric)
         #df[[] = df[["a", "b"]].apply(pd.to_numeric)
         #print(df.dtypes)
@@ -109,7 +113,7 @@ def get_hsccit(year, month=12, path=rawdata_folder):
     '''
     #df['reporting_time'] = f'{year}{month}'
     #print(df)
-    return df
+    #return df
 
 #@time_decorator
 def get_hscoit(year, month=12, path=rawdata_folder):
