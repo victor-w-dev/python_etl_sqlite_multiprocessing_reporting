@@ -207,11 +207,6 @@ class TradeDB:
             insert_str = ("?, " * 10)[:-2]
 
         sql=(f"INSERT INTO {table} ({column_str}) VALUES ({insert_str})")
-        #print(f"sql query: {sql}")
-        #print(f"hhi {len(values)}")
-        #print(f"hhi2 {values}")
-        #print(f"hhhhh{type(values)}")
-        #print(f"hhhhh{values}")
         #values =[title,author,isbn]
         self.cursor.executemany(sql,[values])
         #self.con.commit()
@@ -230,13 +225,6 @@ class TradeDB:
         self.cursor.execute(delquery, [id])
         self.con.commit()
         messagebox.showinfo(title="Book Database",message="Book Deleted")
-
-#db = TradeDB()
-#a = list(readfile.get_hsccit(2018, month='12'))
-#print(a)
-#print(f"final {a}")
-
-
 
 """
 def get_selected_row(event):
