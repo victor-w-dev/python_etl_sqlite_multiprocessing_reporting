@@ -6,9 +6,10 @@ from BSO.time_analysis import time_decorator
 import sqlite3 as pyo
 import os
 import datetime
+import time
 
 rawdata_folder="C&SD_raw_data"
-db_path = "tradesDB/trades_database"
+db_path = "merchandise_trades_DB"
 '''
 con = pyo.connect(db_path)
 print(con)
@@ -54,10 +55,13 @@ def read_file(file_handler, table):
                    row[51:69],
                    row[69:87]]
 
-@time_decorator
+
+#@time_decorator
 class TradeDB:
     def __init__(self):
-        self.con = pyo.connect(db_path+".db")
+        if not os.path.exists(db_path):
+            os.makedirs(db_path)
+        self.con = pyo.connect(db_path+"/"+"trades.db")
         self.cursor = self.con.cursor()
 
         create_HSCCIT_query = ("CREATE TABLE IF NOT EXISTS hsccit(ID INTEGER PRIMARY KEY,"
@@ -121,8 +125,13 @@ class TradeDB:
         rows = self.cursor.fetchall()
         return rows
 
-    @time_decorator
+    def check_report_period(self,table):
+        self.cursor.execute(f"SELECT DISTINCT ReportPeriod FROM {table}")
+        rows = self.cursor.fetchall()
+        return [i[0] for i in rows]
+    #@time_decorator
     def insert_DB(self, table, year, month=12, path=rawdata_folder):
+
         period = f'{year}{month}'
         try:
             file_path = f'{path}/{period}/{table}.dat'
@@ -140,7 +149,7 @@ class TradeDB:
         #it will be faster than using pd.read_fwf as this pd.read_fwf function
         #seem need to
         #import all columns
-        print("db instace start")
+        #print("db instance start")
         with open(file_path, 'r', encoding='utf-8') as file_object:
             for line in read_file(file_object,table):
                 #print(type(i))
@@ -341,25 +350,36 @@ clear_btn.grid(row=15, column=2)#, sticky=tk.W)
 exit_btn=Button(root,text="Exit Application",bg="dim gray",fg="white",font="Calibri 10 bold",command=root.destroy)
 exit_btn.grid(row=15, column=3)
 
-
-
-
-
-
 root.mainloop()  # Runs the application until exit
 """
+
+@time_decorator
+def importdataDB(dbinstance, exist_periods_dict, startyear=2006, endyear=2020):
+    for yr in range(startyear,endyear+1):
+        for m in range(1,13):
+            for table, existing_periods in exist_periods_dict.items():
+                p = f'{yr}{m:02}'
+                if p not in existing_periods:
+                    try:
+                        dbinstance.insert_DB(table,yr,month=f"{m:02}")
+
+                    except FileNotFoundError:
+                        print(f"{yr}{m:02} {table} does not exist\n")
+                    else:
+                        print(f"Successfully imported {yr}{m:02} {table} into DB\n")
+                else:
+                    print(f"Already had {yr}{m:02} {table} in DB\n")
+
 if __name__ == '__main__':
+    start = time.time()
     db = TradeDB()
 
-    @time_decorator
-    def importdataDB():
-        for yr in range(2015,2020):
-            for m in range(1,13):
-                try:
-                    #db.insert_DB('hsccit',yr,month=f"{m:02}")
-                    #db.insert_DB('hscoit',yr,month=f"{m:02}")
-                    db.insert_DB('hscoccit',yr,month=f"{m:02}")
+    db_exist_periods={'hsccit': db.check_report_period('hsccit'),
+                      'hscoit': db.check_report_period('hscoit'),
+                      'hscoccit': db.check_report_period('hscoccit')}
+    print(db_exist_periods)
 
-                except FileNotFoundError:
-                    print(f"{yr}{m:02} doese not exist\n")
-    importdataDB()
+    importdataDB(db, db_exist_periods, startyear=2006, endyear=datetime.datetime.today().year)
+    #411s from 2006
+    end = time.time()
+    print(f'used time {end-start:.3f}s')
