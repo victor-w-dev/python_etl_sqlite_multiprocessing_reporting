@@ -1,219 +1,384 @@
-"""
-The raw data from Census and Statistics Department, HK, contain 3 parts:
-1. Imports/domestic exports/re-exports by consignment country/territory by HS commodity item
-2. Imports by origin country/territory by HS commodity item
-3. Re-exports by origin country/territory by destination country/territory by HS commodity item
-They can be found in folder "./C&SD_raw_data", grouped by year and month.
-
-File names for above namely are:
-1. HSCCIT.DAT
-2. HSCOIT.DAT
-3. HSCOCCIT.DAT
-Define functions to get raw data from the 3 files, then merge in dataframe
-"""
-import pandas as pd
-import numpy as np
+from tkinter import Tk, Button,Label,Scrollbar,Listbox,StringVar,Entry,W,E,N,S,END
+from tkinter import ttk
+from tkinter import messagebox
+from BSO import rawdata_newread as readfile
 from BSO.time_analysis import time_decorator
-from traderecords import TradeDB
 import sqlite3 as pyo
+import os
 import datetime
-#from .merge import hstositc_dict
-'''
+import time
+
+rawdata_folder="C&SD_raw_data"
 db_path = "tradesDB/trades_database"
+'''
 con = pyo.connect(db_path)
 print(con)
 
 cursor = con.cursor()
 '''
-
-rawdata_folder="C&SD_raw_data"
-# conversion of hs to SITC
-#hstositc_dict = get_hstositc_code()
-
-def read_file(file_handler):
+def read_file(file_handler, table):
     for line in file_handler:
         row = line.strip()
+        if table=='hsccit':
+            yield [(row[0]),
+                   row[1:9],
+                   row[9:12],
+                   row[12:30],
+                   row[30:48],
+                   row[48:66],
+                   row[66:84],
+                   row[84:102],
+                   row[102:120],
+                   row[120:138],
+                   row[138:156],
+                   row[156:174],
+                   row[174:192],
+                   row[192:210],
+                   row[210:228]]
 
-        yield [(row[0]),
-               row[1:9],
-               row[9:12],
-               row[12:30],
-               row[30:48],
-               row[48:66],
-               row[66:84],
-               row[84:102],
-               row[102:120],
-               row[120:138],
-               row[138:156],
-               row[156:174],
-               row[174:192],
-               row[192:210],
-               row[210:228]]
+        if table=='hscoit':
+            yield [(row[0]),
+                   row[1:9],
+                   row[9:12],
+                   row[12:30],
+                   row[30:48],
+                   row[48:66],
+                   row[66:84]]
+
+        if table=='hscoccit':
+            yield [(row[0]),
+                   row[1:9],
+                   row[9:12],
+                   row[12:15],
+                   row[15:33],
+                   row[33:51],
+                   row[51:69],
+                   row[69:87]]
+
+
+#@time_decorator
+class TradeDB:
+    def __init__(self):
+        if not os.path.exists(db_path):
+            os.makedirs(db_path)
+        self.con = pyo.connect(db_path+".db")
+        self.cursor = self.con.cursor()
+
+        create_HSCCIT_query = ("CREATE TABLE IF NOT EXISTS hsccit(ID INTEGER PRIMARY KEY,"
+        "TransactionType INTEGER," #1
+        "HScode TEXT," #2
+        "CountryConsignmentCode INTEGER," #3
+        "ImportValueMonthly INTEGER," #4
+        "ImportQuantityMonthly INTEGER," #5
+        "ImportValueYTD INTEGER," #6
+        "ImportQuantityYTD INTEGER," #7
+        "DomesticExportValueMonthly INTEGER," #8
+        "DomesticExportQuantityMonthly INTEGER," #9
+        "DomesticExportValueYTD INTEGER," #10
+        "DomesticExportQuantityYTD INTEGER," #11
+        "ReExportValueMonthly INTEGER," #12
+        "ReExportQuantityMonthly INTEGER," #13
+        "ReExportValueYTD INTEGER," #14
+        "ReExportQuantityYTD INTEGER," #15
+        "ReportPeriod TEXT," #16
+        "UpdatedDate TIMESTAMP)" #17
+        )
+
+        create_HSCOIT_query = ("CREATE TABLE IF NOT EXISTS hscoit(ID INTEGER PRIMARY KEY,"
+        "TransactionType INTEGER," #1
+        "HScode TEXT," #2
+        "CountryOriginCode INTEGER," #3
+        "ImportByOriginValueMonthly INTEGER," #4
+        "ImportByOriginQuantityMonthly INTEGER," #5
+        "ImportByOriginValueYTD INTEGER," #6
+        "ImportByOriginQuantityYTD INTEGER," #7
+        "ReportPeriod TEXT," #8
+        "UpdatedDate TIMESTAMP)" #9
+        )
+
+        create_HSCOCCIT_query = ("CREATE TABLE IF NOT EXISTS hscoccit(ID INTEGER PRIMARY KEY,"
+        "TransactionType INTEGER," #1
+        "HScode TEXT," #2
+        "CountryOriginCode INTEGER," #3
+        "CountryDestinationCode INTEGER," #4
+        "ReExportValueMonthly INTEGER," #5
+        "ReExportQuantityMonthly INTEGER," #6
+        "ReExportValueYTD INTEGER," #7
+        "ReExportQuantityYTD INTEGER," #8
+        "ReportPeriod TEXT," #9
+        "UpdatedDate TIMESTAMP)" #10
+        )
+
+        self.cursor.execute(create_HSCCIT_query)
+        self.cursor.execute(create_HSCOIT_query)
+        self.cursor.execute(create_HSCOCCIT_query)
+
+        self.con.commit()
+        print("You have connected to the database")
+        print(self.con)
+
+    def __del__(self):
+        self.con.close()
+
+    def view(self):
+        self.cursor.execute("SELECT * FROM books")
+        rows = self.cursor.fetchall()
+        return rows
+
+    def check_report_period(self,table):
+        self.cursor.execute(f"SELECT DISTINCT ReportPeriod FROM {table}")
+        rows = self.cursor.fetchall()
+        return [i[0] for i in rows]
+    #@time_decorator
+    def insert_DB(self, table, year, month=12, path=rawdata_folder):
+
+        period = f'{year}{month}'
+        try:
+            file_path = f'{path}/{period}/{table}.dat'
+            print(path)
+            open(file_path)
+        except:
+            file_path = f'{path}/{period}/{table}.txt'
+            open(file_path)
+            print(f"Import from txt file: {file_path}")
+        else:
+            print(f"Import from dat file: {file_path}")
+
+        # using readlines methods may be slow, but actually the program need
+        #not to use all the column after spliting
+        #it will be faster than using pd.read_fwf as this pd.read_fwf function
+        #seem need to
+        #import all columns
+        #print("db instance start")
+        with open(file_path, 'r', encoding='utf-8') as file_object:
+            for line in read_file(file_object,table):
+                #print(type(i))
+                line = line + [f'{year}{month}'] + [datetime.datetime.now()]
+                #print(line)
+                #print(len(line))
+                self.insert_line(table,*line)
+            self.con.commit()
+
+
+
+    def insert_line(self, table, *values):
+        if table == "hsccit":
+            column_str = """TransactionType, HScode, CountryConsignmentCode,
+                            ImportValueMonthly,
+                            ImportQuantityMonthly,
+                            ImportValueYTD,
+                            ImportQuantityYTD,
+                            DomesticExportValueMonthly,
+                            DomesticExportQuantityMonthly,
+                            DomesticExportValueYTD,
+                            DomesticExportQuantityYTD,
+                            ReExportValueMonthly,
+                            ReExportQuantityMonthly,
+                            ReExportValueYTD,
+                            ReExportQuantityYTD,
+                            ReportPeriod,
+                            UpdatedDate
+                            """
+            insert_str = ("?, " * 17)[:-2]
+
+        if table == "hscoit":
+            column_str = """TransactionType, HScode,
+                            CountryOriginCode,
+                            ImportByOriginValueMonthly,
+                            ImportByOriginQuantityMonthly,
+                            ImportByOriginValueYTD,
+                            ImportByOriginQuantityYTD,
+                            ReportPeriod,
+                            UpdatedDate
+                            """
+            insert_str = ("?, " * 9)[:-2]
+
+        if table == "hscoccit":
+            column_str = """TransactionType, HScode,
+                            CountryOriginCode,
+                            CountryDestinationCode,
+                            ReExportValueMonthly,
+                            ReExportQuantityMonthly,
+                            ReExportValueYTD,
+                            ReExportQuantityYTD,
+                            ReportPeriod,
+                            UpdatedDate
+                            """
+            insert_str = ("?, " * 10)[:-2]
+
+        sql=(f"INSERT INTO {table} ({column_str}) VALUES ({insert_str})")
+        #print(f"sql query: {sql}")
+        #print(f"hhi {len(values)}")
+        #print(f"hhi2 {values}")
+        #print(f"hhhhh{type(values)}")
+        #print(f"hhhhh{values}")
+        #values =[title,author,isbn]
+        self.cursor.executemany(sql,[values])
+        #self.con.commit()
+        #print(self.con)
+        #con.commit()
+        #messagebox.showinfo(title="Book Database",message="New book added to database")
+
+    def update(self, id, title, author, isbn):
+        tsql = 'UPDATE books SET  title = ?, author = ?, isbn = ? WHERE id=?'
+        self.cursor.execute(tsql, [title,author,isbn,id])
+        self.con.commit()
+        messagebox.showinfo(title="Book Database",message="Book Updated")
+
+    def delete(self, id):
+        delquery ='DELETE FROM books WHERE id = ?'
+        self.cursor.execute(delquery, [id])
+        self.con.commit()
+        messagebox.showinfo(title="Book Database",message="Book Deleted")
+
+#db = TradeDB()
+#a = list(readfile.get_hsccit(2018, month='12'))
+#print(a)
+#print(f"final {a}")
+
+
+
+"""
+def get_selected_row(event):
+    global selected_tuple
+    index = list_bx.curselection()[0]
+    selected_tuple = list_bx.get(index)
+    title_entry.delete(0, 'end')
+    title_entry.insert('end', selected_tuple[1])
+    author_entry.delete(0, 'end')
+    author_entry.insert('end', selected_tuple[2])
+    isbn_entry.delete(0, 'end')
+    isbn_entry.insert('end', selected_tuple[3])
+
+def view_records():
+    list_bx.delete(0, 'end')
+    for row in db.view():
+        #print(row)
+        list_bx.insert('end', row)
+
+def add_book():
+    db.insert(title_text.get(),author_text.get(),isbn_text.get())
+    list_bx.delete(0, 'end')
+    list_bx.insert('end', (title_text.get(), author_text.get(), isbn_text.get()))
+    title_entry.delete(0, "end") # Clears input after inserting
+    author_entry.delete(0, "end")
+    isbn_entry.delete(0, "end")
+    con.commit()
+
+def delete_records():
+    db.delete(selected_tuple[0])
+    con.commit()
+
+def clear_screen():
+    list_bx.delete(0,'end')
+    title_entry.delete(0,'end')
+    author_entry.delete(0,'end')
+    isbn_entry.delete(0,'end')
+
+def update_records():
+    db.update(selected_tuple[0], title_text.get(), author_text.get(), isbn_text.get())
+    title_entry.delete(0, "end") # Clears input after inserting
+    author_entry.delete(0, "end")
+    isbn_entry.delete(0, "end")
+    con.commit()
+
+def on_closing():
+    dd = db
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        root.destroy()
+        del dd
+
+
+root = Tk()  # Creates application window
+
+root.title("Business Statistics Offline Enhanced V1.0") # Adds a title to application window
+root.configure(background="gray25")  # Add background color to application window
+root.geometry("850x500")  # Sets a size for application window
+root.resizable(width=False,height=False) # Prevents the application window from resizing
+
+# Create Labels and entry widgets
+
+title_label = ttk.Label(root,text="Title",background="gray25",foreground="white",font=("Calibri", 16, "bold"))
+title_label.grid(row=0, column=0, sticky=W)
+title_text = StringVar()
+title_entry = ttk.Entry(root,width=24,textvariable=title_text)
+title_entry.grid(row=0, column=1, sticky=W)
+
+author_label = ttk.Label(root,text="Author",background="gray25",foreground="white",font=("Calibri", 16, "bold"))
+author_label.grid(row=0, column=2, sticky=W)
+author_text = StringVar()
+author_entry = ttk.Entry(root,width=24,textvariable=author_text)
+author_entry.grid(row=0, column=3, sticky=W)
+
+isbn_label = ttk.Label(root,text="ISBN",background="gray25",foreground="white",font=("Calibri", 16, "bold"))
+isbn_label.grid(row=0, column=4, sticky=W)
+isbn_text = StringVar()
+isbn_entry = ttk.Entry(root,width=24,textvariable=isbn_text)
+isbn_entry.grid(row=0, column=5, sticky=W)
+
+# Add a button to insert inputs into database
+
+add_btn = Button(root, text="Add Book",bg="dim gray",fg="white",font="Calibri 10 bold", command=add_book)
+add_btn.grid(row=0, column=6, sticky=W)
+
+# Add  a listbox  to display data from database
+list_bx = Listbox(root,height=16,width=40,font="Calibri  13",bg='light gray')
+list_bx.grid(row=3,column=1, columnspan=14,sticky=W + E,pady=40,padx=15)
+list_bx.bind('<<ListboxSelect>>',get_selected_row)
+
+# Add scrollbar to enable scrolling
+scroll_bar = Scrollbar(root)
+scroll_bar.grid(row=1,column=8, rowspan=14,sticky=W )
+
+list_bx.configure(yscrollcommand=scroll_bar.set) # Enables vetical scrolling
+scroll_bar.configure(command=list_bx.yview)
+
+# Add more Button Widgets
+
+modify_btn=Button(root,text="Modify Record",bg="dim gray",fg="white",font="Calibri 10 bold",command=update_records)
+modify_btn.grid(row=15, column=4)
+
+delete_btn=Button(root,text="Delete Record",bg="dim gray",fg="white",font="Calibri 10 bold",command=delete_records)
+delete_btn.grid(row=15, column=5)
+
+view_btn=Button(root,text="View Records",bg="dim gray",fg="white",font="Calibri 10 bold",command=view_records)
+view_btn.grid(row=15, column=1)#, sticky=tk.N)
+
+clear_btn=Button(root,text="Clear Screen",bg="dim gray",fg="white",font="Calibri 10 bold",command=clear_screen)
+clear_btn.grid(row=15, column=2)#, sticky=tk.W)
+
+exit_btn=Button(root,text="Exit Application",bg="dim gray",fg="white",font="Calibri 10 bold",command=root.destroy)
+exit_btn.grid(row=15, column=3)
+
+root.mainloop()  # Runs the application until exit
+"""
 
 @time_decorator
-def get_hsccit(year, month=12, path=rawdata_folder):
-    period = f'{year}{month}'
-    #file_path = f'{path}/{period}/hsccit.dat'
+def importdataDB(exist_periods_dict, startyear=2006, endyear=2020):
+    for yr in range(startyear,endyear+1):
+        for m in range(1,13):
+            for table, existing_periods in exist_periods_dict.items():
+                p = f'{yr}{m:02}'
+                if p not in existing_periods:
+                    try:
+                        db.insert_DB(table,yr,month=f"{m:02}")
 
-    try:
-        file_path = f'{path}/{period}/hsccit.dat'
-        open(file_path)
-    except:
-        file_path = f'{path}/{period}/hsccit.txt'
-        open(file_path)
-        print(f"Import from txt file: {file_path}")
-    else:
-        print(f"Import from dat file: {file_path}")
-
-    # using readlines methods may be slow, but actually the program need
-    #not to use all the column after spliting
-    #it will be faster than using pd.read_fwf as this pd.read_fwf function
-    #seem need to
-    #import all columns
-
-    db = TradeDB()
-    print("db instace start")
-    with open(file_path, 'r', encoding='utf-8') as file_object:
-        #lines = file_object.readlines()
-        #print(lines[0])
-        #pass
-        #ls=[]
-        #for l in read_large_file(file_object):
-            #print(l)
-        #labels = ['f1','f2','f3','IM','IM_Q','DX','DX_Q','RX','RX_Q']
-        #ls=list(read_file(file_object))
-        #print(read_file(file_object))
-        #print("hi!!!!!!!!!!!")
-
-        for line in read_file(file_object):
-            #print(type(i))
-            line = line + [f'{year}{month}'] + [datetime.datetime.now()]
-            #print(line)
-            #print(len(line))
-            db.insert('HSCCIT',*line)
-        db.con.commit()
-            #if i ==5: break
-        #con.commit()
-        #con.close()
-        #print(next(a))
-        #df = pd.DataFrame(ls,columns=['f1','f2','f3','IM','IM_Q','DX','DX_Q','RX','RX_Q'])
-        #df[[labels[0]]+labels[2:]] = df[[labels[0]]+labels[2:]].apply(pd.to_numeric)
-        #df[[] = df[["a", "b"]].apply(pd.to_numeric)
-        #print(df.dtypes)
-        #print(np.array(ls))
-
-
-
-    #df['reporting_time'] = f'{year}{month}'
-    #print(df)
-    #return df
-
-#@time_decorator
-def get_hscoit(year, month=12, path=rawdata_folder):
-    try:
-        file_path = f'{path}/{year}{month}/hscoit.dat'
-        open(file_path)
-    except:
-        file_path = f'{path}/{year}{month}/hscoit.txt'
-        print(f"Import from txt file: {file_path}")
-    else:
-        print(f"Import from dat file: {file_path}")
-
-    with open(file_path, encoding='utf-8') as file_object:
-        lines = file_object.readlines()
-
-    f1,f2,f3,f6,f7 = ([] for _ in range(5))
-
-    for i, line in enumerate(lines):
-        row = line.strip()
-        f1.append(int(row[0]))
-        f2.append(str(row[1:9]))
-        f3.append(int(row[9:12]))
-        f6.append(int(row[48:66]))
-        f7.append(int(row[66:84]))
-
-
-    df = pd.DataFrame({'f1':f1,'f2':f2,'f3':f3,'IMbyO':f6,'IMbyO_Q':f7})
-    '''
-    # select for transaction type 1 (HS-8digit) only
-    HS8only = df.f1.isin([1])
-    df = df[HS8only]
-
-    # add HS2, HS4 and HS6 columns
-    df['HS-2'] = [x[:2] for x in df.f2]
-    df['HS-4'] = [x[:4] for x in df.f2]
-    df['HS-6'] = [x[:6] for x in df.f2]
-
-    # conversion of hs to SITC
-    df['SITC-1'] = [hstositc_dict.get(x, "NA")[:1] for x in df.f2]
-    df['SITC-2'] = [hstositc_dict.get(x, "NA")[:2] for x in df.f2]
-    df['SITC-3'] = [hstositc_dict.get(x, "NA")[:3] for x in df.f2]
-    df['SITC-4'] = [hstositc_dict.get(x, "NA")[:4] for x in df.f2]
-    df['SITC-5'] = [hstositc_dict.get(x, "NA") for x in df.f2]
-    '''
-    df['reporting_time'] = f'{year}{month}'
-    return df
-
-#@time_decorator
-def get_hscoccit(year, month=12, path=rawdata_folder):
-    try:
-        file_path = f'{path}/{year}{month}/hscoccit.dat'
-        open(file_path)
-    except:
-        file_path = f'{path}/{year}{month}/hscoccit.txt'
-        print(f"Import from txt file: {file_path}")
-    else:
-        print(f"Import from dat file: {file_path}")
-
-    with open(file_path, encoding='utf-8') as file_object:
-        lines = file_object.readlines()
-
-    f1,f2,f3,f4,f7,f8 = ([] for _ in range(6))
-
-    for i, line in enumerate(lines):
-        row = line.strip()
-        f1.append(int(row[0]))
-        f2.append(str(row[1:9]))
-        f3.append(int(row[9:12]))
-        f4.append(int(row[12:15]))
-        f7.append(int(row[51:69]))
-        f8.append(int(row[69:87]))
-
-    df = pd.DataFrame({'f1':f1,'f2':f2,'f3':f3,'f4':f4,'RXbyO':f7,'RXbyO_Q':f8})
-    df['reporting_time'] = f'{year}{month}'
-
-    '''
-    # select for transaction type 1 (HS-8digit) only
-    HS8only = df.f1.isin([1])
-    df = df[HS8only]
-
-    # add HS2, HS4 and HS6 columns
-    df['HS-2'] = [x[:2] for x in df.f2]
-    df['HS-4'] = [x[:4] for x in df.f2]
-    df['HS-6'] = [x[:6] for x in df.f2]
-
-    # conversion of hs to SITC
-    df['SITC-1'] = [hstositc_dict.get(x, "NA")[:1] for x in df.f2]
-    df['SITC-2'] = [hstositc_dict.get(x, "NA")[:2] for x in df.f2]
-    df['SITC-3'] = [hstositc_dict.get(x, "NA")[:3] for x in df.f2]
-    df['SITC-4'] = [hstositc_dict.get(x, "NA")[:4] for x in df.f2]
-    df['SITC-5'] = [hstositc_dict.get(x, "NA") for x in df.f2]
-    '''
-
-    return df
+                    except FileNotFoundError:
+                        print(f"{yr}{m:02} {table} does not exist\n")
+                    else:
+                        print(f"Successfully imported {yr}{m:02} {table} into DB\n")
+                else:
+                    print(f"Already had {yr}{m:02} {table} in DB\n")
 
 if __name__ == '__main__':
-    #calculate time spent
-    #TradeDB()
+    start = time.time()
+    db = TradeDB()
+    #importdataDB()#411s from 2006
+    db_exist_periods={'hsccit': db.check_report_period('hsccit'),
+                      'hscoit': db.check_report_period('hscoit'),
+                      'hscoccit': db.check_report_period('hscoccit')}
+    print(db_exist_periods)
+    importdataDB(db_exist_periods, startyear=2006, endyear=datetime.datetime.today().year)
 
-    print("test")
-
-    get_hsccit(2015, month='12')
-    get_hsccit(2018, month='12')
-
-
-
-    #3.19s 20200613 before modification
-    #print(df)
-    #get_hscoit(2018, month='12') #1.51s 20200613 before modification
-    #get_hscoccit(2018, month='12') #5.07s 20200613 before modification
+    end = time.time()
+    print(f'used time {end-start:.3f}s')
