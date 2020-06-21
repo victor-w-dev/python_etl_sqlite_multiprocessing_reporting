@@ -9,7 +9,7 @@ import datetime
 import time
 
 rawdata_folder="C&SD_raw_data"
-db_path = "tradesDB/trades_database"
+db_path = "merchandise_trades_DB"
 '''
 con = pyo.connect(db_path)
 print(con)
@@ -61,7 +61,7 @@ class TradeDB:
     def __init__(self):
         if not os.path.exists(db_path):
             os.makedirs(db_path)
-        self.con = pyo.connect(db_path+".db")
+        self.con = pyo.connect(db_path+"/"+"trades.db")
         self.cursor = self.con.cursor()
 
         create_HSCCIT_query = ("CREATE TABLE IF NOT EXISTS hsccit(ID INTEGER PRIMARY KEY,"
@@ -354,14 +354,14 @@ root.mainloop()  # Runs the application until exit
 """
 
 @time_decorator
-def importdataDB(exist_periods_dict, startyear=2006, endyear=2020):
+def importdataDB(dbinstance, exist_periods_dict, startyear=2006, endyear=2020):
     for yr in range(startyear,endyear+1):
         for m in range(1,13):
             for table, existing_periods in exist_periods_dict.items():
                 p = f'{yr}{m:02}'
                 if p not in existing_periods:
                     try:
-                        db.insert_DB(table,yr,month=f"{m:02}")
+                        dbinstance.insert_DB(table,yr,month=f"{m:02}")
 
                     except FileNotFoundError:
                         print(f"{yr}{m:02} {table} does not exist\n")
@@ -378,7 +378,8 @@ if __name__ == '__main__':
                       'hscoit': db.check_report_period('hscoit'),
                       'hscoccit': db.check_report_period('hscoccit')}
     print(db_exist_periods)
-    importdataDB(db_exist_periods, startyear=2006, endyear=datetime.datetime.today().year)
+
+    importdataDB(db, db_exist_periods, startyear=2006, endyear=datetime.datetime.today().year)
 
     end = time.time()
     print(f'used time {end-start:.3f}s')
