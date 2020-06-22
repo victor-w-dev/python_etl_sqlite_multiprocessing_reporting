@@ -371,3 +371,4 @@ if __name__ == '__main__':
     #411s from 2006
     end = time.time()
     print(f'used time {end-start:.3f}s')
+    input()
