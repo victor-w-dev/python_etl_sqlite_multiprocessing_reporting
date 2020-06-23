@@ -81,7 +81,7 @@ class TradeDB:
         "ReExportValueYTD INTEGER," #14
         "ReExportQuantityYTD INTEGER," #15
         "ReportPeriod TEXT," #16
-        "UpdatedDate TIMESTAMP)" #17
+        "UploadedToDBDate TIMESTAMP)" #17
         )
 
         create_HSCOIT_query = ("CREATE TABLE IF NOT EXISTS hscoit(ID INTEGER PRIMARY KEY,"
@@ -93,7 +93,7 @@ class TradeDB:
         "ImportByOriginValueYTD INTEGER," #6
         "ImportByOriginQuantityYTD INTEGER," #7
         "ReportPeriod TEXT," #8
-        "UpdatedDate TIMESTAMP)" #9
+        "UploadedToDBDate TIMESTAMP)" #9
         )
 
         create_HSCOCCIT_query = ("CREATE TABLE IF NOT EXISTS hscoccit(ID INTEGER PRIMARY KEY,"
@@ -106,7 +106,7 @@ class TradeDB:
         "ReExportValueYTD INTEGER," #7
         "ReExportQuantityYTD INTEGER," #8
         "ReportPeriod TEXT," #9
-        "UpdatedDate TIMESTAMP)" #10
+        "UploadedToDBDate TIMESTAMP)" #10
         )
 
         self.cursor.execute(create_HSCCIT_query)
@@ -177,7 +177,7 @@ class TradeDB:
                             ReExportValueYTD,
                             ReExportQuantityYTD,
                             ReportPeriod,
-                            UpdatedDate
+                            UploadedToDBDate
                             """
             insert_str = ("?, " * 17)[:-2]
 
@@ -189,7 +189,7 @@ class TradeDB:
                             ImportByOriginValueYTD,
                             ImportByOriginQuantityYTD,
                             ReportPeriod,
-                            UpdatedDate
+                            UploadedToDBDate
                             """
             insert_str = ("?, " * 9)[:-2]
 
@@ -202,7 +202,7 @@ class TradeDB:
                             ReExportValueYTD,
                             ReExportQuantityYTD,
                             ReportPeriod,
-                            UpdatedDate
+                            UploadedToDBDate
                             """
             insert_str = ("?, " * 10)[:-2]
 

@@ -5,11 +5,11 @@ The code file is imported from the folder "./metadata"
 from xlrd import open_workbook
 import sqlite3 as pyo
 import pandas as pd
+import datetime
 from BSO.time_analysis import time_decorator
 
 geo_file = 'metadata/geography.xlsx'
 sitc2hs_file = 'metadata/sitc2hs.xlsx'
-product_code_file = 'metadata/product_code.xlsx'
 hs_code_file = 'metadata/ACON014_HSITEM.xls'
 sitc_code_file = 'metadata/ACON014_SITC.xls'
 industry_classification_file = 'metadata/industry.xlsx'
@@ -23,6 +23,7 @@ def import_geography_code(bk=geo_file):
 
     for table, df in dfs.items():
         try:
+            df['UPLOAD_TO_DB_DATE'] = datetime.datetime.now()
             df.to_sql(table, db, index=False)
         except ValueError:
             print(f"{table} already exists\n")
@@ -36,6 +37,7 @@ def import_hs_code(bk=hs_code_file):
                         dtype=str)
     for table, df in dfs.items():
         try:
+            df['UPLOAD_TO_DB_DATE'] = datetime.datetime.now()
             df.to_sql(table, db, index=False)
         except ValueError:
             print(f"{table} already exists\n")
@@ -49,6 +51,7 @@ def import_sitc_code(bk=sitc_code_file):
                         dtype=str)
     for table, df in dfs.items():
         try:
+            df['UPLOAD_TO_DB_DATE'] = datetime.datetime.now()
             df.to_sql(table, db, index=False)
         except ValueError:
             print(f"{table} already exists\n")
@@ -62,6 +65,7 @@ def import_sitctohs_code(bk=sitc2hs_file):
                         dtype={"SITC5":str,"HS8":str})
     for table, df in dfs.items():
         try:
+            df['UPLOAD_TO_DB_DATE'] = datetime.datetime.now()
             df.to_sql(table, db, index=False)
         except ValueError:
             print(f"{table} already exists\n")
@@ -75,6 +79,7 @@ def import_industry_code(bk=industry_classification_file):
                         dtype={"SITC5":str,"HS8":str})
     for table, df in dfs.items():
         try:
+            df['UPLOAD_TO_DB_DATE'] = datetime.datetime.now()
             df.to_sql(table, db, index=False)
         except ValueError:
             print(f"{table} already exists\n")
