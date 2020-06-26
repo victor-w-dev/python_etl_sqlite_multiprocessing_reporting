@@ -16,9 +16,8 @@ def f(x):
 
 class GeneralTradeProfile():
     def __init__(self, periods):
-        self._periods = periods
+        self.periods = periods
 
-    '''
     @property
     def periods(self):
         return self._periods
@@ -29,7 +28,7 @@ class GeneralTradeProfile():
             self._periods = periods
         else:
             raise TypeError('periods must be tuple')
-    '''
+
     def get_figures(self,db_path):
         self.con = pyo.connect(db_path+"/"+"trades.db")
 
@@ -141,8 +140,8 @@ class GeneralTradeProfile():
                                  ReportPeriod
                    )
                    B ON A.CountryConsignmentCode = B.CountryOriginCode AND
-                        A.ReportPeriod = B.ReportPeriod;
-                            """
+                        A.ReportPeriod = B.ReportPeriod;"""
+
             #queries.append(p)
             jobs.append(pool.map(pd.read_sql_query(con=self.con), {sql:general_trades_sql}))
             #print(general_trades_sql)
@@ -171,11 +170,11 @@ if __name__ == '__main__':
     #periods=(201907,)#, 201807, 201812, 201712, 201612, 201512)
     periods=(201907, 201807, 201812, 201712, 201612, 201512)
 
-    '''
+
     gold_hs8_code = ("71081100", "71081210", "71081290", "71081300",
                       "71082010", "71082090", "71090000", "71123000",
                       "71129100", "71189000")
-    '''
+
 
     print("GeneralTradeProfile:")
 
@@ -183,10 +182,10 @@ if __name__ == '__main__':
 
 
 
-    #profile = GeneralTradeProfile(201712,201812)
+    profile = GeneralTradeProfile(201712,201812)
     #print(profile.get_figures(db_path=db_path))
     #profile.get_figures(db_path=db_path).to_excel("checking.xlsx")
-    profile.get_figures_multiprocessing(db_path=db_path)#.to_excel("checking.xlsx")
+    #profile.get_figures_multiprocessing(db_path=db_path)#.to_excel("checking.xlsx")
 
     end_time = time.time()
     elapsed_time = end_time-start_time
