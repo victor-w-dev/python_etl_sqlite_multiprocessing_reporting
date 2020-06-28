@@ -12,9 +12,9 @@ import multiprocessing as mp
 from BSO.time_analysis import time_decorator
 
 class GeneralTradeProfile():
-    def __init__(self, periods, db_path):
-        self.periods = periods
+    def __init__(self, db_path, periods):
         self._db_path = db_path
+        self.periods = periods
 
     @property
     def periods(self):
@@ -285,7 +285,7 @@ if __name__ == '__main__':
 
     print("GeneralTradeProfile:")
 
-    profile = GeneralTradeProfile(periods, db_path)
+    profile = GeneralTradeProfile(db_path, periods)
 
     #profile = GeneralTradeProfile(201712,201812)
     #print(profile.get_figures((201907,)))
