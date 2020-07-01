@@ -52,6 +52,8 @@ def import_sitc_code(bk=sitc_code_file):
     for table, df in dfs.items():
         try:
             df['UPLOAD_TO_DB_DATE'] = datetime.datetime.now()
+            # right trim the whitespaces
+            df['SITC_Code']=df['SITC_Code'].str.rstrip()
             df.to_sql(table, db, index=False)
         except ValueError:
             print(f"{table} already exists\n")

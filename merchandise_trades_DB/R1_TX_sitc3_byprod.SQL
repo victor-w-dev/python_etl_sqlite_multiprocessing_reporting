@@ -5,7 +5,6 @@ WITH trade AS (
            SITC5,
            substr(SITC5, 1, 3) AS SITC3,
            sum(DomesticExportValueYTD + ReExportValueYTD) AS TX,
-        
            sum(DomesticExportValueYTD) AS DX,
            sum(ReExportValueYTD) AS RX,
            sum(ImportValueYTD) AS IM
@@ -19,20 +18,17 @@ WITH trade AS (
               CountryConsignmentCode,
               SITC3
 )
-
-SELECT* FROM(
-
-SELECT trade.*,   RANK () OVER (
-                PARTITION BY ReportPeriod
-                ORDER BY TX DESC
-                ) as TX_Rank,
-       sitc_english_description AS SITC3_eng_name
-  FROM trade
-       LEFT JOIN
-       sitc_item ON trade.SITC3 = substr(sitc_item.SITC_Code, 1, 3) 
- WHERE sitc_item.SITC_Code_Level = 3 and countryconsignmentcode=631
- ORDER BY CountryConsignmentCode,
-          ReportPeriod,
-          TX DESC
-		  ) where TX_Rank <=10
-         
+SELECT *
+  FROM (
+           SELECT CountryConsignmentCode,
+                  ReportPeriod,
+                  HScode,
+                  SITC3,
+                  sitc_english_description AS SITC3_eng_name
+             FROM trade
+                  LEFT JOIN
+                  sitc_item ON trade.SITC3 = sitc_item.SITC_Code
+            WHERE sitc_item.SITC_Code_Level = 3
+            ORDER BY CountryConsignmentCode,
+                     ReportPeriod
+       );
