@@ -73,10 +73,10 @@ class CommodityTradesProfile():
         data_p= pd.read_sql_query(general_trades_sql, self.con)
         #print(profile.get_figures(db_path=db_path))
         result.append(data_p)
-        df1=pd.concat(result)
+        df=pd.concat(result)
         #print(self.df)
 
-        return df1
+        return df
 
 
 
@@ -85,8 +85,8 @@ if __name__ == '__main__':
     #calculate time spent
     start_time = time.time()
     db_path = "merchandise_trades_DB"
-    #periods=(201907,)#, 201807, 201812, 201712, 201612, 201512)
-    periods=(202004, 201904, 201912, 201812, 201712, 201612)
+    periods=(201907, 201807, 201812, 201712, 201612, 201512)
+    #periods=(202004, 201904, 201912, 201812, 201712, 201612)
 
     '''
     gold_hs8_code = ("71081100", "71081210", "71081290", "71081300",
