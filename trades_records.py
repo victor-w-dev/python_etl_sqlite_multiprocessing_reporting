@@ -80,7 +80,7 @@ class TradeDB:
         "ReExportQuantityMonthly INTEGER," #13
         "ReExportValueYTD INTEGER," #14
         "ReExportQuantityYTD INTEGER," #15
-        "ReportPeriod TEXT," #16
+        "ReportPeriod INTEGER," #16
         "UploadedToDBDate TIMESTAMP)" #17
         )
 
@@ -92,7 +92,7 @@ class TradeDB:
         "ImportByOriginQuantityMonthly INTEGER," #5
         "ImportByOriginValueYTD INTEGER," #6
         "ImportByOriginQuantityYTD INTEGER," #7
-        "ReportPeriod TEXT," #8
+        "ReportPeriod INTEGER," #8
         "UploadedToDBDate TIMESTAMP)" #9
         )
 
@@ -105,7 +105,7 @@ class TradeDB:
         "ReExportQuantityMonthly INTEGER," #6
         "ReExportValueYTD INTEGER," #7
         "ReExportQuantityYTD INTEGER," #8
-        "ReportPeriod TEXT," #9
+        "ReportPeriod INTEGER," #9
         "UploadedToDBDate TIMESTAMP)" #10
         )
 
@@ -370,5 +370,5 @@ if __name__ == '__main__':
     importdataDB(db, db_exist_periods, startyear=2006, endyear=datetime.datetime.today().year)
     #411s from 2006
     end = time.time()
-    print(f'used time {end-start:.3f}s')
-    input()
+    print(f'used time: {end-start:.3f}s')
+    input('Please Enter key to quit')

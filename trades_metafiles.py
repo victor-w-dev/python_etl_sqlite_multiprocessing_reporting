@@ -6,6 +6,7 @@ from xlrd import open_workbook
 import sqlite3 as pyo
 import pandas as pd
 import datetime
+import time
 from BSO.time_analysis import time_decorator
 
 geo_file = 'metadata/geography.xlsx'
@@ -109,12 +110,15 @@ def get_sitc_name(excelfile=product_code_file, sheet_name="sitc3" ):
 '''
 
 if __name__ == '__main__':
+    start = time.time()
     import_geography_code()
     import_sitctohs_code()
     import_hs_code()
     import_sitc_code()
     import_industry_code()
-    input()
+    end = time.time()
+    print(f'used time: {end-start:.3f}s') #382s data input into DB from 2006 to 202004
+    input('Please Enter key to quit')
 '''
 There are two versions(SITC, HS) for classifying trade products
 The fuctions are for geting the product codes.
