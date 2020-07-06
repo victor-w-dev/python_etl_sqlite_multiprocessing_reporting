@@ -7,11 +7,6 @@ from CommodityTrades import CommodityTradesProfile
 from BSO.time_analysis import time_decorator
 
 
-class ExcelOutput(object):
-    """docstring forExcelOutput."""
-
-    def __init__(self, arg):
-        self.arg = arg
 
 
 class TradeReports(object):
@@ -224,7 +219,7 @@ if __name__ == '__main__':
     #print(reports.acquire_countries_info())
     print(type(all_figs))
     China=CountryReport(631, periods, **all_figs)
-    china_dict = China.trades_byproduct()
+    china_dict = China.trades_byproduct(topnumber=10)
 
     for k, v in china_dict.items():
         print(k)
@@ -235,6 +230,10 @@ if __name__ == '__main__':
 
             print(val)
             print('\n')
+
+
+
+
     end_time = time.time()
     elapsed_time = end_time-start_time
     print("time used: ", elapsed_time, " seconds")
