@@ -2,12 +2,11 @@ import time
 import sqlite3 as pyo
 import pandas as pd
 import numpy as np
+import os
 from GeneralTrades_real import GeneralTradesProfile
 from CommodityTrades import CommodityTradesProfile
+from Output import ExcelOutput
 from BSO.time_analysis import time_decorator
-
-
-
 
 class TradeReports(object):
     """docstring for ."""
@@ -52,19 +51,22 @@ class CountryReport(object):
     """docstring for ."""
 
     @time_decorator
-    def __init__(self, country_code, periods_required, **all_trades_figures):
+    def __init__(self, country_code, periods_required, toprank = 10, **all_trades_figures):
         self._country_code = country_code
+        self._toprank = toprank
+
         all_general_trades = all_trades_figures['general_trades']
         all_commodity_trades = all_trades_figures['commodity_trades']
 
-        self._general_figures = all_general_trades[all_general_trades.countrycode.isin([country_code])]
-        self._commodity_figures = all_commodity_trades[all_commodity_trades.CountryConsignmentCode.isin([country_code])]
+        self.general_figures = all_general_trades[all_general_trades.countrycode.isin([country_code])]
+        self.commodity_figures = all_commodity_trades[all_commodity_trades.CountryConsignmentCode.isin([country_code])]
 
         self._periods_required = list(periods_required)
         #self._periods = sorted(set(self._commodity_figures.ReportPeriod))
-        print(self._general_figures)
-        print(self._commodity_figures)
+        print(self.general_figures)
+        print(self.commodity_figures)
         print(self._periods_required)
+        self._country_name = self.general_figures['country_name'].tolist()[0]
 
     @time_decorator
     def TX_byproduct(self):
@@ -91,7 +93,7 @@ class CountryReport(object):
 
 
 
-        self.TX = pd.pivot_table(self._commodity_figures, values='TX', index=['SITC3','SITC3_eng_name'],columns=['ReportPeriod'],\
+        self.TX = pd.pivot_table(self.commodity_figures, values='TX', index=['SITC3','SITC3_eng_name'],columns=['ReportPeriod'],\
                   aggfunc=np.sum, fill_value=0, margins=True)\
                   .sort_values(by=column_sort_order,\
                   ascending=False)
@@ -99,9 +101,50 @@ class CountryReport(object):
         print(self.TX)
         self.TX.to_excel("checking3_TX_China_bySITC3.xlsx")
 
+    def trades_general_dict(self):
+        self.general_figures.set_index('ReportPeriod', inplace = True)
 
-    @time_decorator
-    def trades_byproduct(self, topnumber=10):
+        self.general_figures = self.general_figures.T
+        print(self.general_figures)
+
+
+        fig = self.general_figures.loc[['TX','DX','RX','IM','RXbyO','TT','TB'],:]
+        rank = self.general_figures.loc[['TX_Rank','DX_Rank','RX_Rank','IM_Rank','RXbyO_Rank','TT_Rank'],:]
+
+        rank_adjusted = rank[self._periods_required[-2:]]
+
+        fig_adjusted = fig.copy(deep=True)
+        if len(self._periods_required) == 5 and str(self._periods_required[-1])[-2:] != '12':
+            fig_adjusted = fig[self._periods_required[:2]+self._periods_required[3:5]]
+
+        return {'figures': fig_adjusted, 'rank': rank_adjusted, 'percent_change': CountryReport.percent_change(fig[:-1])}
+
+
+    def percent_change(data):
+        periods=data.columns
+        print(periods)
+        # for data combined with yearly and monthly(year to date)
+        if int(str(periods[-1])[-2:])!=12:
+            year=data.iloc[:,[0,1,3]].pct_change(axis='columns')
+            ytd=data.iloc[:,[2,4]].pct_change(axis='columns')
+            tablepcc=pd.concat([year,ytd],axis=1)
+            tablepcc=tablepcc.iloc[:,[1,2,4]]
+        # for data yearly only
+        elif int(str(periods[-1])[-2:])==12:
+            tablepcc=data.pct_change(axis='columns')
+            tablepcc=tablepcc.iloc[:,[1,2,3]]
+
+        # change pecentage columns name
+        tablepcc.columns = [str(c)+"_% CHG" for c in tablepcc.columns]
+        # make percentage times 100
+        tablepcc*=100
+
+        # table_result = tablepcc.dropna(axis='columns', how='all')
+        return tablepcc
+
+
+    #@time_decorator
+    def trades_byproduct(self):
         '''
         Returns: the dictionary of DataFrame of commodity figures by 4 tradetype.
                 'TX' : Total Export
@@ -114,6 +157,11 @@ class CountryReport(object):
         if len(periods)==4:
             sorting=[lastperiod,periods[-2],periods[-3],periods[-4], codetype]
         '''
+        topnumber = self._toprank
+        column_sort_order = self._periods_required[::-1]
+        percent_chg_cols = self._periods_required[-2:]
+
+
         if len(self._periods_required)==5:
             #sorting=['201907']
             percent_chg_cols = [self._periods_required[-3],self._periods_required[-1]]
@@ -123,7 +171,7 @@ class CountryReport(object):
             column_sort_order = self._periods_required[::-1]
             print(column_sort_order)
         # see the periods of commodity_figures
-        periods_incl = set(self._commodity_figures.ReportPeriod)
+        periods_incl = set(self.commodity_figures.ReportPeriod)
         periods_lack = []
 
         # find out the periods not contained in df
@@ -132,15 +180,15 @@ class CountryReport(object):
                 periods_lack.append(p)
         if periods_lack:
             for p in periods_lack:
-                self._commodity_figures = self._commodity_figures.append({'ReportPeriod' : p, 'SITC3':'N.A.', 'SITC3_eng_name':'N.A.'} , ignore_index=True)
+                self.commodity_figures = self.commodity_figures.append({'ReportPeriod' : p, 'SITC3':'N.A.', 'SITC3_eng_name':'N.A.'} , ignore_index=True)
 
         #print('test')
-        #print(self._commodity_figures)
+        #print(self.commodity_figures)
         result={}
         for tradetype in ['TX','DX','RX','IM']:
             print(tradetype)
 
-            df = pd.pivot_table(self._commodity_figures, values=tradetype, index=['SITC3','SITC3_eng_name'],columns=['ReportPeriod'],\
+            df = pd.pivot_table(self.commodity_figures, values=tradetype, index=['SITC3','SITC3_eng_name'],columns=['ReportPeriod'],\
                  aggfunc=np.sum, fill_value=0, margins=True)\
                  .sort_values(by=column_sort_order,\
                  ascending=False)
@@ -195,7 +243,14 @@ class CountryReport(object):
         #result.to_excel("checking3_tradetype_bySITC3.xlsx")
         return result
 
-
+    @time_decorator
+    def report_to_excel(self):
+        report = ExcelOutput(self._country_name, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='MN')
+        #report.create_and_change_path()
+        #report.money_conversion()
+        report.part1_toexcel_generaltrade()
+        #print(report.trades_byproduct_dict)
+        #return report.trades_byproduct_dict
 
 
 
@@ -203,8 +258,8 @@ if __name__ == '__main__':
     #calculate time spent
     start_time = time.time()
     db_path = "merchandise_trades_DB"
-    #periods=(201907, 201807, 201812, 201712, 201612)
-    periods=(201612, 201712, 201807, 201812, 201907)
+    periods=(201612, 201712, 201812, 201912)
+    #periods=(201612, 201712, 201807, 201812, 201907)
 
     #periods=(202004, 201904, 201912, 201812, 201712, 201612)
 
@@ -218,9 +273,10 @@ if __name__ == '__main__':
     all_figs = reports.all_trades_figures()
     #print(reports.acquire_countries_info())
     print(type(all_figs))
-    China=CountryReport(631, periods, **all_figs)
-    china_dict = China.trades_byproduct(topnumber=10)
-
+    R1=CountryReport(191, periods, toprank = 10, **all_figs)
+    #print(China.trades_general_dict())
+    R1.report_to_excel()
+    '''
     for k, v in china_dict.items():
         print(k)
 
@@ -231,7 +287,7 @@ if __name__ == '__main__':
             print(val)
             print('\n')
 
-
+    '''
 
 
     end_time = time.time()
