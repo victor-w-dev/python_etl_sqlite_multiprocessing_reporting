@@ -4,20 +4,21 @@ import numpy as np
 import openpyxl
 import pandas as pd
 import xlsxwriter
+from BSO.time_analysis import time_decorator
 from win32com.client import Dispatch
 
 class ExcelOutput(object):
     """docstring forExcelOutput."""
 
-    def __init__(self, countryname, trades_general_dict, trades_byproduct_dict, report_type, currency='HKD',money='MN'):
+    def __init__(self, countryname, periods_required, trades_general_dict, trades_byproduct_dict, report_type, currency='HKD',money='MN'):
         self.countryname = countryname
         self.trades_general_dict = trades_general_dict
         self.trades_byproduct_dict = trades_byproduct_dict
         self.report_type = report_type
         self._currency = currency
         self._money = money
-        self._lastperiod = max(trades_general_dict['figures'].columns)
-        self._periods = trades_general_dict['figures'].columns
+        self._lastperiod = periods_required[-1]
+        self._periods = periods_required
         self._excel_name = f"{(self.countryname).replace('/',',')}_{self._lastperiod}_{self._currency}_{self._money}.xlsx"
 
 
@@ -26,22 +27,23 @@ class ExcelOutput(object):
         unit = {'TH':10**3, 'MN':10**6}
 
         self.trades_general_dict['figures'] = \
-        self.trades_general_dict['figures']\
-            .divide(dollar[self._currency]*unit[self._money])
+        self.trades_general_dict['figures'] / (dollar[self._currency]*unit[self._money])
 
         #self.trades_general_dict['figures'].to_excel("4_country.xlsx")
 
         for k, v in self.trades_byproduct_dict.items():
-            v['figures'] = v['figures'].divide(dollar[self._currency]*unit[self._money])
+            v['figures'] = v['figures']/(dollar[self._currency]*unit[self._money])
         return self.trades_byproduct_dict
 
     def create_and_change_path(self):
         file_path="Output_testing"+"/"+"R1_"+str(self._lastperiod)+"/"+self.report_type+"/"+self._currency+"/"+self._money
         if not os.path.exists(file_path):
             os.makedirs(file_path)
-        os.chdir(file_path)
+        #os.chdir(file_path)
+        self._file_path = file_path
         print('testing folder creating')
 
+    #@time_decorator
     def denotesymbol(data, datatype):
         if datatype=='fig':
             data[(data<0.5) & (data>0)] ='*'
@@ -68,7 +70,7 @@ class ExcelOutput(object):
         # export figures and change to excel
 
         self.create_and_change_path()
-        writer = pd.ExcelWriter(self._excel_name, engine='xlsxwriter')
+        writer = pd.ExcelWriter(f"{self._file_path}/{self._excel_name}", engine='xlsxwriter')
 
         self.trades_general_dict['figures'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=3,header=False)
         self.trades_general_dict['percent_change'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=7,header=False)
@@ -80,6 +82,8 @@ class ExcelOutput(object):
         self.adjust_excelformat_xlsxwriter(writer)
         self.part3_toexcel_ranking_cty(writer)
         writer.save()
+
+        self.adjust_excelformat_openpyxl()
 
     def adjust_excelformat_xlsxwriter(self, writer, noofprod=10):
         workbook  = writer.book
@@ -200,9 +204,9 @@ class ExcelOutput(object):
         worksheet.write("B5", "'"+str(self._periods[-2])[2:4], fmt_bold_right)
         worksheet.write("C5", "'"+str(self._periods[-1])[2:4], fmt_bold_right)
 
-    def adjust_excelformat_openpyxl(self, excel_name, currency, money):
-        wb = openpyxl.load_workbook(excel_name)
-        ws = wb[f"{currency}_{money}"]
+    def adjust_excelformat_openpyxl(self):
+        wb = openpyxl.load_workbook(f"{self._file_path}/{self._excel_name}")
+        ws = wb[f"{self._currency}_{self._money}"]
 
         # use openpyxl
         ft1 = openpyxl.styles.Font(name='Arial', size=7.5)
@@ -260,8 +264,8 @@ class ExcelOutput(object):
                 _cell = ws.cell(row,col)
                 _cell.font = ft1
                 _cell.number_format = pct_format
+        wb.save(f"{self._file_path}/{self._excel_name}")
 
-        wb.save(excel_name)
 
 def autofit(excel_name, currency, money):
     """using win32com.client to control excel to autofit"""
