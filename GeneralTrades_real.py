@@ -142,8 +142,16 @@ class GeneralTradesProfile():
                    A ON A.countrycode = B.countrycode AND
                         A.ReportPeriod = B.ReportPeriod
         )
-        SELECT *,
-               ifnull(TX - IM, 0) TB,
+        SELECT ReportPeriod,
+               countrycode,
+               DESC,
+               DX,
+               RX,
+               TX,
+               IM,
+               TT,
+               RXbyO,
+               TX - IM TB,
               RANK () OVER (
               PARTITION BY ReportPeriod
               ORDER BY TX DESC
@@ -173,7 +181,9 @@ class GeneralTradesProfile():
               ORDER BY (TX - IM) DESC
               ) TB_Rank
 
-          FROM C;
+          FROM C
+          LEFT JOIN
+          country ON C.countrycode = country.CODE;
 
           """
 

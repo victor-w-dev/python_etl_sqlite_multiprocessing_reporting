@@ -45,6 +45,19 @@ C AS (
            A ON A.countrycode = B.countrycode AND 
                 A.ReportPeriod = B.ReportPeriod
 )
-SELECT *,
-       ifnull(TX - IM, 0) TB
-  FROM C/* and CountryConsignmentCode = 199 */;
+SELECT ReportPeriod,
+       countrycode,
+       DESC,
+       DX,
+       RX,
+       TX,
+       IM,
+       TT,
+       RXbyO,
+       TX - IM TB
+  FROM C
+       LEFT JOIN
+       country ON C.countrycode = country.CODE;
+
+  
+/* and CountryConsignmentCode = 199 */;
