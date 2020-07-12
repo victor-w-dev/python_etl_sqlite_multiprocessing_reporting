@@ -70,6 +70,12 @@ class CountryReport(object):
         self.general_figures = all_general_trades[all_general_trades.countrycode.isin([country_code])]
         self.commodity_figures = all_commodity_trades[all_commodity_trades.CountryConsignmentCode.isin([country_code])]
 
+        # preprocessing the general_figures
+        self.general_figures.set_index('ReportPeriod', inplace=True)
+        self.general_figures = self.general_figures.T
+
+
+
         self._periods_required = list(periods_required)
 
         #self._periods = sorted(set(self._commodity_figures.ReportPeriod))
@@ -123,9 +129,7 @@ class CountryReport(object):
         self.TX.to_excel("checking3_TX_China_bySITC3.xlsx")
 
     def trades_general_dict(self):
-        self.general_figures.set_index('ReportPeriod', inplace = True)
 
-        self.general_figures = self.general_figures.T
         #print(self.general_figures)
         #print('test\n\n\n')
 
@@ -289,14 +293,18 @@ class CountryReport(object):
 
     @time_decorator
     def report_to_excel(self):
-        report = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='MN')
+        #report1 = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='MN')
+
         #report.create_and_change_path()
         #report.money_conversion()
-        report.part1_toexcel_generaltrade()
+        #report1.part1_toexcel_generaltrade()
+
         #print(report.trades_byproduct_dict)
         #return report.trades_byproduct_dict
-
-
+        for curr in ['HKD','USD']:
+            for m in ['MN', 'TH']:
+                report = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency=curr ,money=m)
+                report.part1_toexcel_generaltrade()
 
 if __name__ == '__main__':
     #calculate time spent
@@ -317,7 +325,7 @@ if __name__ == '__main__':
     all_figs = reports.all_trades_figures()
     #reports.acquire_countries_info(111,811,631,191)
     for row in reports.acquire_countries_info().itertuples():
-        #if row.CODE in [199,695,883]:
+        #if row.CODE in [199,695,883,631]:
             try:
                 R = CountryReport(row.CODE, periods, toprank = 10, **all_figs)
                 print(f"no.{R._report_number:03d} {row.CODE} {row.DESC} doing")

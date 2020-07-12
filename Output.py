@@ -61,7 +61,8 @@ class ExcelOutput(object):
             data.replace([np.nan, 0], '-',inplace=True)
             data.replace(0.001, '*',inplace=True)
         return data
-
+        
+    @time_decorator
     def part1_toexcel_generaltrade(self):
         # convert money by currency in only figures
         self.money_conversion()
