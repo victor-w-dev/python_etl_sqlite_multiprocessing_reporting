@@ -51,7 +51,7 @@ class TradeReports(object):
             else: country_info_sql += f"where CODE in {countrycode}"
 
         cls.countries_info_df= pd.read_sql_query(country_info_sql, cls.con)
-        print(cls.countries_info_df)
+        #print(cls.countries_info_df)
 
         return cls.countries_info_df
 
@@ -70,12 +70,22 @@ class CountryReport(object):
         self.commodity_figures = all_commodity_trades[all_commodity_trades.CountryConsignmentCode.isin([country_code])]
 
         self._periods_required = list(periods_required)
+
         #self._periods = sorted(set(self._commodity_figures.ReportPeriod))
-        print(self.general_figures)
-        print(self.commodity_figures)
-        print(self._periods_required)
+        #print(self.general_figures)
+        #print(self.commodity_figures)
+        #print(self._periods_required)
         self._country_name = TradeReports.acquire_countries_info(country_code)['DESC'].values[0]
         print(self._country_name)
+
+    @property
+    def periods_lack(self):
+        # see the periods of commodity_figures
+        periods_incl = set(self.commodity_figures.ReportPeriod)
+        # find out the periods not contained in df
+        self._periods_lack = [p for p in self._periods_required if p not in periods_incl]
+        return self._periods_lack
+
 
     @time_decorator
     def TX_byproduct(self):
@@ -107,37 +117,49 @@ class CountryReport(object):
                   .sort_values(by=column_sort_order,\
                   ascending=False)
 
-        print(self.TX)
+        #print(self.TX)
         self.TX.to_excel("checking3_TX_China_bySITC3.xlsx")
 
     def trades_general_dict(self):
         self.general_figures.set_index('ReportPeriod', inplace = True)
 
         self.general_figures = self.general_figures.T
-        print(self.general_figures)
-        print('test\n\n\n')
+        #print(self.general_figures)
+        #print('test\n\n\n')
 
 
         fig = self.general_figures.loc[['TX','DX','RX','IM','RXbyO','TT','TB'],:]
+        rank = self.general_figures.loc[['TX_Rank','DX_Rank','RX_Rank','IM_Rank','RXbyO_Rank','TT_Rank'],:]
+
+        # check the country data availability
         if fig.empty:
             print(f"Country Report no.{next(CountryReport.countryreport_counter):03d} has no data")
-            return {'figures': pd.DataFrame(np.empty((len(self._periods_required),7))),
-            'rank': pd.DataFrame(np.empty((6,2))),
-            'percent_change': pd.DataFrame(np.empty((5,3)))
+            return {'figures': pd.DataFrame(np.zeros((len(self._periods_required),7))),
+            'rank': pd.DataFrame(np.zeros((6,2))),
+            'percent_change': pd.DataFrame(np.zeros((5,3)))
             }
-
-        rank = self.general_figures.loc[['TX_Rank','DX_Rank','RX_Rank','IM_Rank','RXbyO_Rank','TT_Rank'],:]
+        if self.periods_lack:
+            #print("testing_periods_lack\n\n")
+            #fig[201907]=np.nan
+            #print(type(self.periods_lack))
+            for p in self.periods_lack:
+                fig[p] = 0
+                rank[p]= 0
+        #print(fig)
+        #print(rank)
 
         if len(self._periods_required) == 5 and str(self._periods_required[-1])[-2:] != '12':
             fig_adjusted = fig[self._periods_required[:2]+self._periods_required[3:5]]
             rank_adjusted = rank[self._periods_required[3:5]]
+        #print(fig_adjusted)
+        #print(rank_adjusted)
 
         return {'figures': fig_adjusted, 'rank': rank_adjusted, 'percent_change': CountryReport.percent_change(fig[:-1])}
 
 
     def percent_change(data):
         periods=data.columns
-        print(periods)
+        #print(periods)
         # for data combined with yearly and monthly(year to date)
         if int(str(periods[-1])[-2:])!=12:
             year=data.iloc[:,[0,1,3]].pct_change(axis='columns')
@@ -285,6 +307,7 @@ if __name__ == '__main__':
     all_figs = reports.all_trades_figures()
     #reports.acquire_countries_info(111,811,631,191)
     for row in reports.acquire_countries_info().itertuples():
+
         try:
             CountryReport(row.CODE, periods, toprank = 10, **all_figs).report_to_excel()
         except:
@@ -294,17 +317,21 @@ if __name__ == '__main__':
             f.write(str(sys.exc_info()[1]))
             f.close()
             #continue
-    #print(type(all_figs))
-
+        #print(type(all_figs))
     '''
+    for cty in [199,695,883]:
+        report = CountryReport(cty, periods, toprank = 10, **all_figs)
+        print(report.periods_lack)
+        report.report_to_excel()
+
     R1=CountryReport(111, periods, toprank = 10, **all_figs)
     R1.report_to_excel()
 
     R2=CountryReport(811, periods, toprank = 10, **all_figs)
     #print(China.trades_general_dict())
     R2.report_to_excel()
-    '''
-    '''
+
+
     for k, v in china_dict.items():
         print(k)
 
