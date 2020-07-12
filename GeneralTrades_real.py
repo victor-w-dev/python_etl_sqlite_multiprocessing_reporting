@@ -95,88 +95,96 @@ class GeneralTradesProfile():
 
         result = []
         general_trades_sql = f"""
-        SELECT A.ReportPeriod,
-               CountryConsignmentCode countrycode,
-               country_name,
-               TX,
-               DX,
-               RX,
-               IM,
-               B.RXbyO,
-               TT,
-               TX - IM TB,
-               RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY TX DESC
-                ) TX_Rank ,
-                RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY DX DESC
-                ) DX_Rank,
-                RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY RX DESC
-                ) RX_Rank,
-                RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY IM DESC
-                ) IM_Rank,
-                RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY B.RXbyO DESC
-                ) RXbyO_Rank,
-                RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY TT DESC
-                ) TT_Rank,
-                RANK () OVER (
-                PARTITION BY A.ReportPeriod
-                ORDER BY (TX - IM) DESC
-                ) TB_Rank
+                WITH A AS (
+            SELECT ReportPeriod,
+                   CountryConsignmentCode countrycode,
+                   sum(DomesticExportValueYTD) AS DX,
+                   sum(ReExportValueYTD) AS RX,
+                   sum(DomesticExportValueYTD + ReExportValueYTD) AS TX,
+                   sum(ImportValueYTD) AS IM,
+                   sum(DomesticExportValueYTD + ReExportValueYTD + ImportValueYTD) AS TT
+              FROM hsccit
+             WHERE TransactionType = 1 AND
+                   ReportPeriod IN {self._periods} AND
+                   hscode NOT IN ("71081100", "71081210", "71081290", "71081300", "71082010", "71082090", "71090000", "71123000", "71129100", "71189000")
+             GROUP BY CountryConsignmentCode,
+                      ReportPeriod
+        ),
+        B AS (
+            SELECT ReportPeriod,
+                   CountryOriginCode countrycode,
+                   sum(ReExportValueYTD) AS RXbyO
+              FROM hscoccit
+             WHERE TransactionType = 1 AND
+                   ReportPeriod IN {self._periods} AND
+                   hscode NOT IN ("71081100", "71081210", "71081290", "71081300", "71082010", "71082090", "71090000", "71123000", "71129100", "71189000")
+             GROUP BY CountryOriginCode,
+                      ReportPeriod
+        ),
+        C AS (
+            SELECT A.*,
+                   B.RXbyO
+              FROM A
+                   LEFT JOIN
+                   B ON A.countrycode = B.countrycode AND
+                        A.ReportPeriod = B.ReportPeriod
+            UNION
+            SELECT B.ReportPeriod,
+                   B.countrycode,
+                   ifnull(DX, 0),
+                   ifnull(RX, 0),
+                   ifnull(TX, 0),
+                   ifnull(IM, 0),
+                   ifnull(TT, 0),
+                   ifnull(RXbyO, 0)
+              FROM B
+                   LEFT JOIN
+                   A ON A.countrycode = B.countrycode AND
+                        A.ReportPeriod = B.ReportPeriod
+        )
+        SELECT *,
+               ifnull(TX - IM, 0) TB,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY TX DESC
+              ) TX_Rank ,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY DX DESC
+              ) DX_Rank,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY RX DESC
+              ) RX_Rank,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY IM DESC
+              ) IM_Rank,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY RXbyO DESC
+              ) RXbyO_Rank,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY TT DESC
+              ) TT_Rank,
+              RANK () OVER (
+              PARTITION BY ReportPeriod
+              ORDER BY (TX - IM) DESC
+              ) TB_Rank
 
+          FROM C;
 
-          FROM (
-                   SELECT ReportPeriod,
-                          CountryConsignmentCode,
-                          country.[DESC] AS country_name,
-                          sum(DomesticExportValueYTD) AS DX,
-                          sum(ReExportValueYTD) AS RX,
-                          sum(DomesticExportValueYTD + ReExportValueYTD) AS TX,
-                          sum(ImportValueYTD) AS IM,
-                          sum(DomesticExportValueYTD + ReExportValueYTD + ImportValueYTD) AS TT,
-                          sum(ReExportValueYTD) AS RXbyO
-                     FROM hsccit
-                          LEFT JOIN
-                          country ON CountryConsignmentCode = country.CODE
-                    WHERE TransactionType = 1 AND
-                          ReportPeriod IN {self._periods} AND
-                          hscode NOT IN ("71081100", "71081210", "71081290", "71081300", "71082010", "71082090", "71090000", "71123000", "71129100", "71189000")
-                    GROUP BY CountryConsignmentCode,
-                             ReportPeriod
-               )
-               A
-               LEFT JOIN
-               (
-                   SELECT ReportPeriod,
-                          CountryOriginCode,
-                          sum(ReExportValueYTD) AS RXbyO
-                     FROM hscoccit
-                    WHERE TransactionType = 1 AND
-                          ReportPeriod IN {self._periods} AND
-                          hscode NOT IN ("71081100", "71081210", "71081290", "71081300", "71082010", "71082090", "71090000", "71123000", "71129100", "71189000")
-                    GROUP BY CountryOriginCode,
-                             ReportPeriod
-               )
-               B ON A.CountryConsignmentCode = B.CountryOriginCode AND
-                    A.ReportPeriod = B.ReportPeriod;
-        """
+          """
+
         #print(general_trades_sql)
         data_p= pd.read_sql_query(general_trades_sql, self.con)
         #print(profile.get_figures(db_path=db_path))
         result.append(data_p)
         df1=pd.concat(result)
+        df1.fillna(0.0, inplace = True)
         #print(self.df)
-
+        # return df result with NA = 0
         return df1
 
     #@time_decorator
@@ -233,8 +241,8 @@ class GeneralTradesProfile():
         """
         #print(general_trades_sql)
         #self.con.close()
-
-        return pd.DataFrame(pd.read_sql_query(general_trades_sql, self.con))
+        # return df result with NA = 0
+        return pd.DataFrame(pd.read_sql_query(general_trades_sql, self.con)).fillna(0, inplace = True)
         #print(profile.get_figures(db_path=db_path))
         #result.append(data_p)
         #self.df=pd.concat(result)

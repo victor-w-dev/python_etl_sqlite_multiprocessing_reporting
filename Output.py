@@ -72,12 +72,12 @@ class ExcelOutput(object):
         self.create_and_change_path()
         writer = pd.ExcelWriter(f"{self._file_path}/{self._excel_name}", engine='xlsxwriter')
 
-        self.trades_general_dict['figures'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=3,header=False)
-        self.trades_general_dict['percent_change'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=7,header=False)
+        self.trades_general_dict['figures'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=3,header=False,na_rep='NA')
+        self.trades_general_dict['percent_change'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=7,header=False,na_rep='NA')
 
 
         self.trades_general_dict['rank'].to_excel(writer, sheet_name=f"{self._currency}_{self._money}",index=False,
-                             startrow=5, startcol=1,header=False)
+                             startrow=5, startcol=1,header=False,na_rep='NA')
 
         self.adjust_excelformat_xlsxwriter(writer)
         self.part3_toexcel_ranking_cty(writer)

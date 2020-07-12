@@ -60,6 +60,7 @@ class CountryReport(object):
     countryreport_counter = itertools.count(1)
     #@time_decorator
     def __init__(self, country_code, periods_required, toprank = 10, **all_trades_figures):
+        self._report_number = next(CountryReport.countryreport_counter)
         self._country_code = country_code
         self._toprank = toprank
 
@@ -72,16 +73,17 @@ class CountryReport(object):
         self._periods_required = list(periods_required)
 
         #self._periods = sorted(set(self._commodity_figures.ReportPeriod))
-        #print(self.general_figures)
+        print(self.general_figures)
         #print(self.commodity_figures)
         #print(self._periods_required)
         self._country_name = TradeReports.acquire_countries_info(country_code)['DESC'].values[0]
-        print(self._country_name)
+        #print(self._country_name)
 
     @property
     def periods_lack(self):
+        print(list(self.general_figures.columns))
         # see the periods of commodity_figures
-        periods_incl = set(self.commodity_figures.ReportPeriod)
+        periods_incl = list(self.general_figures.columns)
         # find out the periods not contained in df
         self._periods_lack = [p for p in self._periods_required if p not in periods_incl]
         return self._periods_lack
@@ -133,20 +135,27 @@ class CountryReport(object):
 
         # check the country data availability
         if fig.empty:
-            print(f"Country Report no.{next(CountryReport.countryreport_counter):03d} has no data")
+            print(f"Country Report no.{self._report_number:03d} has no data")
             return {'figures': pd.DataFrame(np.zeros((len(self._periods_required),7))),
             'rank': pd.DataFrame(np.zeros((6,2))),
             'percent_change': pd.DataFrame(np.zeros((5,3)))
             }
         if self.periods_lack:
-            #print("testing_periods_lack\n\n")
+            #print(self._report_number)
+            print("testing_periods_lack\n\n")
+            #print(fig)
+            #print(rank)
             #fig[201907]=np.nan
-            #print(type(self.periods_lack))
+            print(self.periods_lack)
+
             for p in self.periods_lack:
                 fig[p] = 0
                 rank[p]= 0
-        #print(fig)
-        #print(rank)
+
+        print('here!!!!!!!!')
+        print(fig)
+        print(rank)
+        print('\n\n')
 
         if len(self._periods_required) == 5 and str(self._periods_required[-1])[-2:] != '12':
             fig_adjusted = fig[self._periods_required[:2]+self._periods_required[3:5]]
@@ -176,6 +185,7 @@ class CountryReport(object):
         # make percentage times 100
         tablepcc*=100
 
+        print(tablepcc,'\n')
         # table_result = tablepcc.dropna(axis='columns', how='all')
         return tablepcc
 
@@ -219,7 +229,7 @@ class CountryReport(object):
         #print(self.commodity_figures)
         result={}
         for tradetype in ['TX','DX','RX','IM']:
-            print(tradetype)
+            #print(tradetype)
 
             df = pd.pivot_table(self.commodity_figures, values=tradetype, index=['SITC3','SITC3_eng_name'],columns=['ReportPeriod'],\
                  aggfunc=np.sum, fill_value=0, margins=True)\
@@ -264,9 +274,9 @@ class CountryReport(object):
             #print(pct_share)
 
             # percentage change of last period
-            print(f"test here!!!!\n\n")
-            print(df)
-            print("see")
+            #print(f"test here!!!!\n\n")
+            #print(df)
+            #print("see")
             pct_chg = df[percent_chg_cols].pct_change(axis='columns')*100
 
 
@@ -307,15 +317,17 @@ if __name__ == '__main__':
     all_figs = reports.all_trades_figures()
     #reports.acquire_countries_info(111,811,631,191)
     for row in reports.acquire_countries_info().itertuples():
-
-        try:
-            CountryReport(row.CODE, periods, toprank = 10, **all_figs).report_to_excel()
-        except:
-            print(f"{row.CODE} {row.DESC} has error")
-            f = open(f"{row.CODE} {row.DESC}.txt", "w")
-            f.write(str(sys.exc_info()[0]))
-            f.write(str(sys.exc_info()[1]))
-            f.close()
+        #if row.CODE in [199,695,883]:
+            try:
+                R = CountryReport(row.CODE, periods, toprank = 10, **all_figs)
+                print(f"no.{R._report_number:03d} {row.CODE} {row.DESC} doing")
+                R.report_to_excel()
+            except:
+                print(f"{row.CODE} {row.DESC} has error\n")
+                f = open(f"{row.CODE} {row.DESC}.txt", "w")
+                f.write(str(sys.exc_info()[0]))
+                f.write(str(sys.exc_info()[1]))
+                f.close()
             #continue
         #print(type(all_figs))
     '''
