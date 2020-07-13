@@ -191,11 +191,11 @@ class GeneralTradesProfile():
         data_p= pd.read_sql_query(general_trades_sql, self.con)
         #print(profile.get_figures(db_path=db_path))
         result.append(data_p)
-        df1=pd.concat(result)
-        df1.fillna(0.0, inplace = True)
-        #print(self.df)
+        df=pd.concat(result)
+        df.fillna(0.0, inplace = True)
+        #print(df.dtypes)
         # return df result with NA = 0
-        return df1
+        return df
 
     #@time_decorator
     def get_figures_single_period(self, period):

@@ -74,7 +74,7 @@ class CommodityTradesProfile():
         #print(profile.get_figures(db_path=db_path))
         result.append(data_p)
         df=pd.concat(result)
-        #print(self.df)
+        #print(df.dtypes)
 
         return df
 

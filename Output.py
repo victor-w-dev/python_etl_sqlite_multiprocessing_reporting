@@ -41,12 +41,12 @@ class ExcelOutput(object):
             os.makedirs(file_path)
         #os.chdir(file_path)
         self._file_path = file_path
-        print('testing folder creating')
+        #print('testing folder creating')
 
-    #@time_decorator
+    @time_decorator
     def denotesymbol(data, datatype):
-        if datatype=='fig':
-            data[(data<0.5) & (data>0)] ='*'
+        if datatype=='figures':
+            data[(abs(data)<0.5) & (abs(data)>0)] ='*'
             data.replace([np.nan, 0], '-',inplace=True)
 
         elif datatype=='share':
@@ -54,27 +54,31 @@ class ExcelOutput(object):
             data.replace([np.inf, -np.inf], '∞',inplace=True)
             data.replace([np.nan, 0], '-',inplace=True)
 
-        elif datatype=='chg':
+        elif datatype=='percent_change':
+            #data[(abs(data)<0.05) & (abs(data)>0)] ='*'
+            #data[(abs(data)>1000) & (abs(data)<np.inf)] = '..'
             data[((data<0.05) & (data>0))|((data>-0.05) & (data<0))] = 0.001
             data[((data>1000)&(data<np.inf))|((data<-1000)&(data>-np.inf))] = '..'
             data.replace([np.inf, -np.inf], '∞',inplace=True)
             data.replace([np.nan, 0], '-',inplace=True)
             data.replace(0.001, '*',inplace=True)
         return data
-        
+
     @time_decorator
-    def part1_toexcel_generaltrade(self):
+    def export_results(self):
         # convert money by currency in only figures
         self.money_conversion()
         # denote symbols to the figures
         #fig_d = denotesymbol(fig_c, datatype='fig')
         # export figures and change to excel
+        #print(self.trades_general_dict['figures'])
+        #print(ExcelOutput.denotesymbol(self.trades_general_dict['figures'],'figures'))
 
         self.create_and_change_path()
         writer = pd.ExcelWriter(f"{self._file_path}/{self._excel_name}", engine='xlsxwriter')
 
-        self.trades_general_dict['figures'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=3,header=False,na_rep='NA')
-        self.trades_general_dict['percent_change'].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=7,header=False,na_rep='NA')
+        ExcelOutput.denotesymbol(self.trades_general_dict['figures'], 'figures').to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=3,header=False)
+        ExcelOutput.denotesymbol(self.trades_general_dict['percent_change'], 'percent_change').to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=5, startcol=7,header=False)
 
 
         self.trades_general_dict['rank'].to_excel(writer, sheet_name=f"{self._currency}_{self._money}",index=False,

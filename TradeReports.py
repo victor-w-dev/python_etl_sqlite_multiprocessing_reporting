@@ -67,7 +67,7 @@ class CountryReport(object):
         all_general_trades = all_trades_figures['general_trades']
         all_commodity_trades = all_trades_figures['commodity_trades']
 
-        self.general_figures = all_general_trades[all_general_trades.countrycode.isin([country_code])]
+        self.general_figures = all_general_trades.loc[all_general_trades.countrycode.isin([country_code]),:]
         self.commodity_figures = all_commodity_trades[all_commodity_trades.CountryConsignmentCode.isin([country_code])]
 
         # preprocessing the general_figures
@@ -79,7 +79,9 @@ class CountryReport(object):
         self._periods_required = list(periods_required)
 
         #self._periods = sorted(set(self._commodity_figures.ReportPeriod))
-        print(self.general_figures)
+        #print(self.general_figures)
+        #print(self.general_figures.dtypes)
+
         #print(self.commodity_figures)
         #print(self._periods_required)
         self._country_name = TradeReports.acquire_countries_info(country_code)['DESC'].values[0]
@@ -134,8 +136,9 @@ class CountryReport(object):
         #print('test\n\n\n')
 
 
-        fig = self.general_figures.loc[['TX','DX','RX','IM','RXbyO','TT','TB'],:]
-        rank = self.general_figures.loc[['TX_Rank','DX_Rank','RX_Rank','IM_Rank','RXbyO_Rank','TT_Rank'],:]
+        fig = self.general_figures.loc[['TX','DX','RX','IM','RXbyO','TT','TB'],:].astype('int64')
+        rank = self.general_figures.loc[['TX_Rank','DX_Rank','RX_Rank','IM_Rank','RXbyO_Rank','TT_Rank'],:].astype('int64')
+        #print(fig.dtypes)
 
         # check the country data availability
         if fig.empty:
@@ -155,11 +158,14 @@ class CountryReport(object):
             for p in self.periods_lack:
                 fig[p] = 0
                 rank[p]= 0
+        # make sure columns in ascending order
+        fig.sort_index(axis=1, inplace=True)
+        rank.sort_index(axis=1, inplace=True)
 
-        print('here!!!!!!!!')
-        print(fig)
-        print(rank)
-        print('\n\n')
+        #print('here!!!!!!!!')
+        #print(fig)
+        #print(rank)
+        #print('\n\n')
 
         if len(self._periods_required) == 5 and str(self._periods_required[-1])[-2:] != '12':
             fig_adjusted = fig[self._periods_required[:2]+self._periods_required[3:5]]
@@ -189,7 +195,7 @@ class CountryReport(object):
         # make percentage times 100
         tablepcc*=100
 
-        print(tablepcc,'\n')
+        #print(tablepcc,'\n')
         # table_result = tablepcc.dropna(axis='columns', how='all')
         return tablepcc
 
@@ -293,19 +299,20 @@ class CountryReport(object):
 
     @time_decorator
     def report_to_excel(self):
-        #report1 = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='MN')
+        report1 = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='MN')
 
         #report.create_and_change_path()
         #report.money_conversion()
-        #report1.part1_toexcel_generaltrade()
+        report1.export_results()
 
         #print(report.trades_byproduct_dict)
         #return report.trades_byproduct_dict
+        '''
         for curr in ['HKD','USD']:
             for m in ['MN', 'TH']:
                 report = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency=curr ,money=m)
-                report.part1_toexcel_generaltrade()
-
+                report.export_results()
+                '''
 if __name__ == '__main__':
     #calculate time spent
     start_time = time.time()
@@ -326,16 +333,20 @@ if __name__ == '__main__':
     #reports.acquire_countries_info(111,811,631,191)
     for row in reports.acquire_countries_info().itertuples():
         #if row.CODE in [199,695,883,631]:
-            try:
-                R = CountryReport(row.CODE, periods, toprank = 10, **all_figs)
-                print(f"no.{R._report_number:03d} {row.CODE} {row.DESC} doing")
-                R.report_to_excel()
-            except:
-                print(f"{row.CODE} {row.DESC} has error\n")
-                f = open(f"{row.CODE} {row.DESC}.txt", "w")
-                f.write(str(sys.exc_info()[0]))
-                f.write(str(sys.exc_info()[1]))
-                f.close()
+        #if row.CODE == 199:
+
+        try:
+            R = CountryReport(row.CODE, periods, toprank = 10, **all_figs)
+            print(f"no.{R._report_number:03d} {row.CODE} {row.DESC} doing")
+            R.report_to_excel()
+
+        except:
+            print(f"{row.CODE} {row.DESC} has error\n")
+            f = open(f"{row.CODE} {row.DESC}.txt", "w")
+            f.write(str(sys.exc_info()[0]))
+            f.write(str(sys.exc_info()[1]))
+            f.close()
+
             #continue
         #print(type(all_figs))
     '''
