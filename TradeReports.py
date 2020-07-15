@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 import os
 import itertools
+from functools import partial
 import sys
+import multiprocessing, threading
 from GeneralTrades_real import GeneralTradesProfile
 from CommodityTrades import CommodityTradesProfile
 from Output import ExcelOutput
@@ -59,13 +61,14 @@ class CountryReport(object):
     """docstring for ."""
     countryreport_counter = itertools.count(1)
     #@time_decorator
-    def __init__(self, country_code, periods_required, toprank = 10, **all_trades_figures):
+    def __init__(self, all_trades_figures_dict, periods_required, toprank = 10, country_code=None):
+
         self._report_number = next(CountryReport.countryreport_counter)
         self._country_code = country_code
         self._toprank = toprank
 
-        all_general_trades = all_trades_figures['general_trades']
-        all_commodity_trades = all_trades_figures['commodity_trades']
+        all_general_trades = all_trades_figures_dict['general_trades']
+        all_commodity_trades = all_trades_figures_dict['commodity_trades']
 
         self.general_figures = all_general_trades.loc[all_general_trades.countrycode.isin([country_code]),:]
         self.commodity_figures = all_commodity_trades[all_commodity_trades.CountryConsignmentCode.isin([country_code])]
@@ -86,6 +89,9 @@ class CountryReport(object):
         #print(self._periods_required)
         self._country_name = TradeReports.acquire_countries_info(country_code)['DESC'].values[0]
         #print(self._country_name)
+        #self.report_to_excel()
+        print(f"no.{self._report_number:03d} {country_code} {self._country_name} doing")
+        self.report_to_excel()
 
     @property
     def periods_lack(self):
@@ -273,10 +279,12 @@ class CountryReport(object):
             df_top.loc[("OTHERS", "OTHERS"),:]=OTHERS
             df = df_top
             #print(df)
+            if len(self._periods_required) == 5 and str(self._periods_required[-1])[-2:] != '12':
+                df_adjusted = df[self._periods_required[:2]+self._periods_required[3:5]]
 
             # percentage share of total
             try:
-                pct_share = df/df.sum().values*100
+                pct_share = df_adjusted/df_adjusted.sum().values*100
             except:
                 # if exception occurs, suppose no data for the trade types
                 # so there is no 'All' in row 0, just remain df unchanged
@@ -293,26 +301,77 @@ class CountryReport(object):
 
             #print(tradetype)
             #print(df)
-            result[tradetype] = {'figures': df, 'percent_share':pct_share, 'percent_change':pct_chg}
+            result[tradetype] = {'figures': df_adjusted, 'percent_share':pct_share, 'percent_change':pct_chg}
         #result.to_excel("checking3_tradetype_bySITC3.xlsx")
         return result
 
     @time_decorator
     def report_to_excel(self):
+        '''
         report1 = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='MN')
+        report2 = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency='HKD',money='TH')
 
         #report.create_and_change_path()
         #report.money_conversion()
         report1.export_results()
+        report2.export_results()
+        '''
 
+
+        #p.close()
+        #p.join()
         #print(report.trades_byproduct_dict)
         #return report.trades_byproduct_dict
+        general_dict = self.trades_general_dict()
+        byproduct_dict = self.trades_byproduct()
         '''
         for curr in ['HKD','USD']:
             for m in ['MN', 'TH']:
-                report = ExcelOutput(self._country_name, self._periods_required, self.trades_general_dict(), self.trades_byproduct(), "Country", currency=curr ,money=m)
+
+
+                report = ExcelOutput(self._country_name, self._periods_required, general_dict, byproduct, "Country", currency=curr ,money=m)
                 report.export_results()
                 '''
+
+
+        f = partial(ExcelOutput,self._country_name, self._periods_required, self._toprank, general_dict, byproduct_dict, "Country")
+        #multiprocessing.freeze_support()
+        #use all cpu core for multiprocessing
+        #p = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+        #p = multiprocessing.Pool(processes = 8)
+
+        #results=[]
+        #print(f"testing multiprocessing: Total CPU count {multiprocessing.cpu_count()}")
+        #print(f"using {multiprocessing.cpu_count()} for exporting excel reports")
+        for i, currency in enumerate(['HKD','USD']):
+          for j, money in enumerate(['TH','MN']):
+        #        p.apply_async(f,(currency, money))
+                f(currency, money).export_results()
+                '''
+                thread.start()
+                threads.append(thread)
+
+        for thread in threads:
+            thread.join()
+            thread.export_results()
+            '''
+                #results.append(p.apply_async(f,(currency, money)))
+        #p.starmap(f,list(itertools.product(['HKD','USD'], ['TH','MN'])))
+        #results.append(p.apply_async(f,list(itertools.product(['HKD','USD'], ['TH','MN']))))
+        #p.apply_async(f,list(itertools.product(['HKD','USD'], ['TH','MN'])))
+                #p.apply(f,list(itertools.product(['HKD','USD'], ['TH','MN'])))
+                #p.apply(f,(currency,money))
+                #p.apply(f,(currency,money))
+        #p.map(f,list(itertools.product(['HKD','USD'], ['TH','MN'])))
+
+        #p.close()
+        #p.join()
+
+        #for result in results:
+            #result.get().export_results()
+                #print(f'{self.name} {currency} {money} ')
+                #p.apply_async(self.report_to_excel,(currency, money, original_path,))'''
+
 if __name__ == '__main__':
     #calculate time spent
     start_time = time.time()
@@ -331,21 +390,38 @@ if __name__ == '__main__':
     #print(TradeReports.__dict__)
     all_figs = reports.all_trades_figures()
     #reports.acquire_countries_info(111,811,631,191)
+
+
+    #multiprocessing.freeze_support()
+    #use all cpu core for multiprocessing
+    #p = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+
+
     for row in reports.acquire_countries_info().itertuples():
         #if row.CODE in [199,695,883,631]:
-        #if row.CODE == 199:
+        #if row.CODE == 631:
 
-        try:
-            R = CountryReport(row.CODE, periods, toprank = 10, **all_figs)
-            print(f"no.{R._report_number:03d} {row.CODE} {row.DESC} doing")
-            R.report_to_excel()
+            try:
 
-        except:
-            print(f"{row.CODE} {row.DESC} has error\n")
-            f = open(f"{row.CODE} {row.DESC}.txt", "w")
-            f.write(str(sys.exc_info()[0]))
-            f.write(str(sys.exc_info()[1]))
-            f.close()
+                #p.apply_async(CountryReport,(row.CODE, periods, 10, **all_figs))
+                #multiple_results = [p.apply_async(CountryReport, (all_figs, periods, 10, row.CODE))]
+                #print([res.get(timeout=1) for res in multiple_results])
+
+
+                R = CountryReport(all_figs, periods, 10, row.CODE)
+                #print(f"no.{R._report_number:03d} {row.CODE} {row.DESC} doing")
+
+                #R.report_to_excel()
+
+            except:
+                print(f"{row.CODE} {row.DESC} has error\n")
+                f = open(f"{row.CODE} {row.DESC}.txt", "w")
+                f.write(str(sys.exc_info()[0]))
+                f.write(str(sys.exc_info()[1]))
+                f.close()
+    #p.close()
+    #p.join()
+    #print([res.get() for res in multiple_results])
 
             #continue
         #print(type(all_figs))

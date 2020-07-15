@@ -6,21 +6,24 @@ import pandas as pd
 import xlsxwriter
 from BSO.time_analysis import time_decorator
 from win32com.client import Dispatch
+import copy
+#import threading
 
-class ExcelOutput(object):
+
+class ExcelOutput():
     """docstring forExcelOutput."""
 
-    def __init__(self, countryname, periods_required, trades_general_dict, trades_byproduct_dict, report_type, currency='HKD',money='MN'):
+    def __init__(self, countryname, periods_required, toprank, trades_general_dict, trades_byproduct_dict, report_type, currency='HKD',money='MN'):
         self.countryname = countryname
-        self.trades_general_dict = trades_general_dict
-        self.trades_byproduct_dict = trades_byproduct_dict
+        self.trades_general_dict = copy.deepcopy(trades_general_dict)
+        self.trades_byproduct_dict = copy.deepcopy(trades_byproduct_dict)
         self.report_type = report_type
         self._currency = currency
         self._money = money
         self._lastperiod = periods_required[-1]
         self._periods = periods_required
         self._excel_name = f"{(self.countryname).replace('/',',')}_{self._lastperiod}_{self._currency}_{self._money}.xlsx"
-
+        self._toprank = toprank
 
     def money_conversion(self):
         dollar = {'HKD':1, 'USD':7.8}
@@ -33,7 +36,7 @@ class ExcelOutput(object):
 
         for k, v in self.trades_byproduct_dict.items():
             v['figures'] = v['figures']/(dollar[self._currency]*unit[self._money])
-        return self.trades_byproduct_dict
+        #return self.trades_byproduct_dict
 
     def create_and_change_path(self):
         file_path="Output_testing"+"/"+"R1_"+str(self._lastperiod)+"/"+self.report_type+"/"+self._currency+"/"+self._money
@@ -43,7 +46,7 @@ class ExcelOutput(object):
         self._file_path = file_path
         #print('testing folder creating')
 
-    @time_decorator
+    #@time_decorator
     def denotesymbol(data, datatype):
         if datatype=='figures':
             data[(abs(data)<0.5) & (abs(data)>0)] ='*'
@@ -64,7 +67,7 @@ class ExcelOutput(object):
             data.replace(0.001, '*',inplace=True)
         return data
 
-    @time_decorator
+    #@time_decorator
     def export_results(self):
         # convert money by currency in only figures
         self.money_conversion()
@@ -84,16 +87,25 @@ class ExcelOutput(object):
         self.trades_general_dict['rank'].to_excel(writer, sheet_name=f"{self._currency}_{self._money}",index=False,
                              startrow=5, startcol=1,header=False,na_rep='NA')
 
-        self.adjust_excelformat_xlsxwriter(writer)
+        startrow=17
+        for trade in ['TX','DX','RX','IM']:
+            self.trade_byproduct_table(writer, trade, startrow)
+            startrow+=(self._toprank+3)
+
         self.part3_toexcel_ranking_cty(writer)
+        self.adjust_excelformat_xlsxwriter(writer)
+
         writer.save()
 
         self.adjust_excelformat_openpyxl()
 
-    def adjust_excelformat_xlsxwriter(self, writer, noofprod=10):
+
+
+
+    def adjust_excelformat_xlsxwriter(self, writer):
         workbook  = writer.book
         worksheet = writer.sheets[f"{self._currency}_{self._money}"]
-        title = f"HONG KONG'S TOP {noofprod} TRADE WITH "+ self.countryname
+        title = f"HONG KONG'S TOP {self._toprank} TRADE WITH "+ self.countryname
         # setting format, labels, title, annotation for cells in the excel file
         merge_format_T = workbook.add_format({'bold': 1,'align': 'center',
                         'font_name': 'Arial','font_size':10})
@@ -125,9 +137,9 @@ class ExcelOutput(object):
         worksheet.write("A12", 'TRADE BALANCE', fmt_bold_left)
 
         worksheet.write(16, 1, '-TOTAL EXPORTS-', fmt_bold)
-        worksheet.write(16+noofprod+3, 1, '-DOMESTIC EXPORTS-', fmt_bold)
-        worksheet.write(16+2*(noofprod+3), 1, '-RE-EXPORTS-', fmt_bold)
-        worksheet.write(16+3*(noofprod+3), 1, '-IMPORTS-', fmt_bold)
+        worksheet.write(16+self._toprank+3, 1, '-DOMESTIC EXPORTS-', fmt_bold)
+        worksheet.write(16+2*(self._toprank+3), 1, '-RE-EXPORTS-', fmt_bold)
+        worksheet.write(16+3*(self._toprank+3), 1, '-IMPORTS-', fmt_bold)
 
         worksheet.merge_range('A1:J1', title, merge_format_T)
         worksheet.merge_range("H2:J2", f'VALUE : {self._currency} {self._money}', fmt_bold)
@@ -165,19 +177,30 @@ class ExcelOutput(object):
         worksheet.hide_gridlines(2)
 
         # write source, symbol annotation at the end
-        worksheet.merge_range(18+4*(noofprod+3),0,18+4*(noofprod+3),5, "* INSIGNIFICANT            ∞ INFINITY", fmt_left)
-        worksheet.merge_range(19+4*(noofprod+3),0,19+4*(noofprod+3),5, "..OVER 1000% INCREASE      - NIL     N.E.S. NOT ELSEWHERE SPECIFIED", fmt_left)
-        worksheet.merge_range(20+4*(noofprod+3),0,20+4*(noofprod+3),5, "SOURCE: HONG KONG TRADE STATISTICS, CENSUS & STATISTICS DEPT.", fmt_left)
+        worksheet.merge_range(18+4*(self._toprank+3),0,18+4*(self._toprank+3),5, "* INSIGNIFICANT            ∞ INFINITY", fmt_left)
+        worksheet.merge_range(19+4*(self._toprank+3),0,19+4*(self._toprank+3),5, "..OVER 1000% INCREASE      - NIL     N.E.S. NOT ELSEWHERE SPECIFIED", fmt_left)
+        worksheet.merge_range(20+4*(self._toprank+3),0,20+4*(self._toprank+3),5, "SOURCE: HONG KONG TRADE STATISTICS, CENSUS & STATISTICS DEPT.", fmt_left)
 
-
-
-    '''
-    def part2a_toexcel_specialtrade_fig(fig, writer, currency, money, startrow):
+    def trade_byproduct_table(self, writer, trade, startrow=17):
         # convert money by currency in only figures
-        fig_c = money_conversion(fig, currency, money)
+        #fig_c = money_conversion(fig, currency, money)
         # denote symbols to the figures
-        fig_d = denotesymbol(fig_c, datatype='fig')
+        #fig_d = denotesymbol(fig_c, datatype='fig')
+        #print(self.trades_byproduct_dict[trade]['figures'])
+        #print(type(self.trades_byproduct_dict[trade]['figures'].index))
+        self.trades_byproduct_dict[trade]['figures'].index.to_frame(index=False).to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=0,header=False)
+        #self.trades_byproduct_dict[trade]['figures'].iloc[:,0].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=True,startrow=startrow, startcol=0,header=False)
+        #self.trades_byproduct_dict[trade]['percent_share'].iloc[:,0].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=3,header=False)
+
+        for i, c in zip([0,1,2,3],[2,4,6,8]):
+            ExcelOutput.denotesymbol(self.trades_byproduct_dict[trade]['figures'].iloc[:,i], "figures").to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=c,header=False)
+            ExcelOutput.denotesymbol(self.trades_byproduct_dict[trade]['percent_share'].iloc[:,i], "share").to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=c+1,header=False)
+
+        ExcelOutput.denotesymbol(self.trades_byproduct_dict[trade]['percent_change'].iloc[:,-1], "percent_change").to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=10,header=False)
+
+        #self.trades_byproduct_dict['TX']['figures']
         # export trade figures in different rows and columns
+        """
         fig_d.iloc[:,0].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=2,header=False)
         fig_d.iloc[:,1].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=4,header=False)
         fig_d.iloc[:,2].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=6,header=False)
@@ -193,7 +216,7 @@ class ExcelOutput(object):
     def part2c_toexcel_specialtrade_chg(chg, writer, currency, money, startrow):
         # export trade changes in different rows and columns
         chg.iloc[:,-1].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=10,header=False)
-    '''
+"""
     def part3_toexcel_ranking_cty(self, writer):
         workbook  = writer.book
         worksheet = writer.sheets[f"{self._currency}_{self._money}"]
@@ -270,7 +293,6 @@ class ExcelOutput(object):
                 _cell.font = ft1
                 _cell.number_format = pct_format
         wb.save(f"{self._file_path}/{self._excel_name}")
-
 
 def autofit(excel_name, currency, money):
     """using win32com.client to control excel to autofit"""
