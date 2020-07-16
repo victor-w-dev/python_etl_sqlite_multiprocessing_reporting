@@ -45,7 +45,7 @@ tradestat_multiprocessing_with_DB is a Python program to generate meaningful rep
    
 6) [GeneralTrades_getdata.py](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/GeneralTrades_getdata.py)<br>
    [CommodityTrades_getdata.py](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/CommodityTrades_getdata.py)<br>
-   These 2 files involve SQL query embedded into python module to acquire data from sqlite database
+   These 2 files involve SQL query embedded into python modules to acquire data from sqlite database
    
 7) [TradeReports_analysis_multiprocessing.py](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/TradeReports_analysis_multiprocessing.py)
    This module performs multiprocessing by apply_async function to export Excel Reports.
