@@ -26,12 +26,12 @@ tradestat_multiprocessing_with_DB is a Python module to generate meaningful repo
    Full completed reports in Excel format as examples can be downloaded as demo
 
 3) [trades_metafiles_into_DB.py](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/trades_metafiles_into_DB.py)	
-   trades_metafiles_into_DB.py will insert geography, commodity, industry, product code, etc in a sqlite database by following function
-   import_geography_code()
-   import_sitctohs_code()
-   import_hs_code()
-   import_sitc_code()
-   import_industry_code()
+   trades_metafiles_into_DB.py will insert geography, commodity, industry, product code, etc in a sqlite database by following functions:<br>
+   import_geography_code()<br>
+   import_sitctohs_code()<br>
+   import_hs_code()<br>
+   import_sitc_code()<br>
+   import_industry_code()<br>
  
 4) [trades_records_into_DB.py](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/trades_records_into_DB.py)
    insert all the commodity trade records for HK with other countries into sqlite database in the folder [merchandise_trades_DB](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/tree/master/merchandise_trades_DB)
