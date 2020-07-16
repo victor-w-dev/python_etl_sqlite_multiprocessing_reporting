@@ -51,11 +51,11 @@ tradestat_multiprocessing_with_DB is a Python module to generate meaningful repo
    This module performs multiprocessing by apply_async function to export Excel Reports.
    It run around 230 seconds to export 856 excel reports (0.27 seconds used per one) by following codes:
    
-   p = multiprocessing.Pool(processes = multiprocessing.cpu_count())
+   p = multiprocessing.Pool(processes = multiprocessing.cpu_count()) <br>
 
-   for row in reports.acquire_countries_info().itertuples():
-            try:
-                p.apply_async(CountryReport,(all_figs, periods, 10, row.CODE))
-   p.close()
-   p.join()
+   for row in reports.acquire_countries_info().itertuples(): <br>
+            try: <br>
+                p.apply_async(CountryReport,(all_figs, periods, 10, row.CODE)) <br>
+   p.close()<br>
+   p.join()<br>
   
