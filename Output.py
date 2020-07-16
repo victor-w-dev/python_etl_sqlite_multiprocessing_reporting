@@ -32,19 +32,14 @@ class ExcelOutput():
         self.trades_general_dict['figures'] = \
         self.trades_general_dict['figures'] / (dollar[self._currency]*unit[self._money])
 
-        #self.trades_general_dict['figures'].to_excel("4_country.xlsx")
-
         for k, v in self.trades_byproduct_dict.items():
             v['figures'] = v['figures']/(dollar[self._currency]*unit[self._money])
-        #return self.trades_byproduct_dict
 
     def create_and_change_path(self):
-        file_path="Output_testing"+"/"+"R1_"+str(self._lastperiod)+"/"+self.report_type+"/"+self._currency+"/"+self._money
+        file_path="Output"+"/"+"R1_"+str(self._lastperiod)+"/"+self.report_type+"/"+self._currency+"/"+self._money
         if not os.path.exists(file_path):
             os.makedirs(file_path)
-        #os.chdir(file_path)
         self._file_path = file_path
-        #print('testing folder creating')
 
     #@time_decorator
     def denotesymbol(data, datatype):
@@ -58,8 +53,6 @@ class ExcelOutput():
             data.replace([np.nan, 0], '-',inplace=True)
 
         elif datatype=='percent_change':
-            #data[(abs(data)<0.05) & (abs(data)>0)] ='*'
-            #data[(abs(data)>1000) & (abs(data)<np.inf)] = '..'
             data[((data<0.05) & (data>0))|((data>-0.05) & (data<0))] = 0.001
             data[((data>1000)&(data<np.inf))|((data<-1000)&(data>-np.inf))] = '..'
             data.replace([np.inf, -np.inf], '∞',inplace=True)
@@ -69,13 +62,7 @@ class ExcelOutput():
 
     #@time_decorator
     def export_results(self):
-        # convert money by currency in only figures
         self.money_conversion()
-        # denote symbols to the figures
-        #fig_d = denotesymbol(fig_c, datatype='fig')
-        # export figures and change to excel
-        #print(self.trades_general_dict['figures'])
-        #print(ExcelOutput.denotesymbol(self.trades_general_dict['figures'],'figures'))
 
         self.create_and_change_path()
         writer = pd.ExcelWriter(f"{self._file_path}/{self._excel_name}", engine='xlsxwriter')
@@ -98,9 +85,6 @@ class ExcelOutput():
         writer.save()
 
         self.adjust_excelformat_openpyxl()
-
-
-
 
     def adjust_excelformat_xlsxwriter(self, writer):
         workbook  = writer.book
@@ -182,15 +166,7 @@ class ExcelOutput():
         worksheet.merge_range(20+4*(self._toprank+3),0,20+4*(self._toprank+3),5, "SOURCE: HONG KONG TRADE STATISTICS, CENSUS & STATISTICS DEPT.", fmt_left)
 
     def trade_byproduct_table(self, writer, trade, startrow=17):
-        # convert money by currency in only figures
-        #fig_c = money_conversion(fig, currency, money)
-        # denote symbols to the figures
-        #fig_d = denotesymbol(fig_c, datatype='fig')
-        #print(self.trades_byproduct_dict[trade]['figures'])
-        #print(type(self.trades_byproduct_dict[trade]['figures'].index))
         self.trades_byproduct_dict[trade]['figures'].index.to_frame(index=False).to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=0,header=False)
-        #self.trades_byproduct_dict[trade]['figures'].iloc[:,0].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=True,startrow=startrow, startcol=0,header=False)
-        #self.trades_byproduct_dict[trade]['percent_share'].iloc[:,0].to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=3,header=False)
 
         for i, c in zip([0,1,2,3],[2,4,6,8]):
             ExcelOutput.denotesymbol(self.trades_byproduct_dict[trade]['figures'].iloc[:,i], "figures").to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=c,header=False)
@@ -198,25 +174,6 @@ class ExcelOutput():
 
         ExcelOutput.denotesymbol(self.trades_byproduct_dict[trade]['percent_change'].iloc[:,-1], "percent_change").to_excel(writer,sheet_name=f"{self._currency}_{self._money}",index=False,startrow=startrow, startcol=10,header=False)
 
-        #self.trades_byproduct_dict['TX']['figures']
-        # export trade figures in different rows and columns
-        """
-        fig_d.iloc[:,0].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=2,header=False)
-        fig_d.iloc[:,1].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=4,header=False)
-        fig_d.iloc[:,2].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=6,header=False)
-        fig_d.iloc[:,3].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=8,header=False)
-
-    def part2b_toexcel_specialtrade_share(share, writer, currency, money, startrow):
-        # export trade shares in different rows and columns
-        share.iloc[:,0].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=3,header=False)
-        share.iloc[:,1].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=5,header=False)
-        share.iloc[:,-2].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=7,header=False)
-        share.iloc[:,-1].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=9,header=False)
-
-    def part2c_toexcel_specialtrade_chg(chg, writer, currency, money, startrow):
-        # export trade changes in different rows and columns
-        chg.iloc[:,-1].to_excel(writer,sheet_name=f"{currency}_{money}",index=False,startrow=startrow, startcol=10,header=False)
-"""
     def part3_toexcel_ranking_cty(self, writer):
         workbook  = writer.book
         worksheet = writer.sheets[f"{self._currency}_{self._money}"]

@@ -1,23 +1,14 @@
 # tradestat
-**tradestat** is a Python module to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department.
+tradestat is a Python module to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department.
 
-The reports include **HK's Export, Import, Re-Export, bilateral trades, etc. of different commodities with other countries, regions**
-
-The official government database website as reference: https://tradeidds.censtatd.gov.hk/Index/a83bc112c6c24d04ab04f9a4c987181e
-
-### Intuition  
-- RHS is the report for **HK with USA**, describing general trade statistics with commodity classification
-- LHS is one of the raw data in numerical format
-![the link not valid](https://raw.githubusercontent.com/v-w-dep/tradestat/master/transform.PNG)
+![link not valid](https://raw.githubusercontent.com/oda-developer/tradestat/master/transform.PNG)
 
 - 4 types of reports are provided
 - HK's external merchandise trade by currency (HKD, USD) and dollar units (thousand, million) with: 
-1) World   (total number:   1x4 =   4) 
-2) Region  (total number:  16x4 =  64)
-3) Area    (total number:   9x4 =  36)
-4) Country (total number: 214x4 = 856)
-
-- altogther, **960** reports in Excel format will be generated, supposed within **30 mins** (in my PC).
+1) World   (total number:   1) 
+2) Region  (total number:  16)
+3) Area    (total number:   9)
+4) Country (total number: 214)
 
 ### Developing or suggested working environment: 
 - Python version 3.6 or above
