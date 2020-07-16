@@ -1,5 +1,5 @@
 # tradestat_multiprocessing_with_DB
-tradestat_multiprocessing_with_DB is a Python module to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department with object-oriented and multiprocessing concept.
+tradestat_multiprocessing_with_DB is a Python program to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department with object-oriented and multiprocessing concept.
 
 ![link not valid](https://raw.githubusercontent.com/oda-developer/tradestat/master/transform.PNG)
 
