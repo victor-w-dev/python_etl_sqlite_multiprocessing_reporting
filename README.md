@@ -54,8 +54,8 @@ tradestat_multiprocessing_with_DB is a Python module to generate meaningful repo
    p = multiprocessing.Pool(processes = multiprocessing.cpu_count()) <br>
 
    for row in reports.acquire_countries_info().itertuples(): <br>
-   "  "try: <br>
-   "    "p.apply_async(CountryReport,(all_figs, periods, 10, row.CODE)) <br>
+   <t>try: <br>
+   <t><t>p.apply_async(CountryReport,(all_figs, periods, 10, row.CODE)) <br>
    p.close()<br>
    p.join()<br>
   
