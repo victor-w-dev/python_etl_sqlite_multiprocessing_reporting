@@ -10,7 +10,7 @@ import multiprocessing
 from GeneralTrades_getdata import GeneralTradesProfile
 from CommodityTrades_getdata import CommodityTradesProfile
 from Output import ExcelOutput
-from create_R1_periods import R1_periods
+from BSO.create_R1_periods import R1_periods
 from BSO.time_analysis import time_decorator
 
 class TradeReports(object):
@@ -272,7 +272,7 @@ if __name__ == '__main__':
 
     for row in reports.acquire_countries_info().itertuples():
         #if row.CODE in [199,695,883,631]:
-        if row.CODE == 631:
+        #if row.CODE == 631:
             try:
                 R = CountryReport(all_figs, periods, 10, row.CODE)
 

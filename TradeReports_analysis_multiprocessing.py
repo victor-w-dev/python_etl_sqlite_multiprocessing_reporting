@@ -10,7 +10,7 @@ import multiprocessing
 from GeneralTrades_getdata import GeneralTradesProfile
 from CommodityTrades_getdata import CommodityTradesProfile
 from Output import ExcelOutput
-from create_R1_periods import R1_periods
+from BSO.create_R1_periods import R1_periods
 from BSO.time_analysis import time_decorator
 
 class TradeReports(object):
