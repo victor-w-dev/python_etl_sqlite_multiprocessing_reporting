@@ -1,5 +1,5 @@
 # tradestat_multiprocessing_with_DB
-tradestat_multiprocessing_with_DB is a Python program to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department with object-oriented and multiprocessing concept.
+tradestat_multiprocessing_with_DB is a Python program to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department with object-oriented and multiprocessing concept, using SQLite as database.
 
 ![link not valid](https://raw.githubusercontent.com/oda-developer/tradestat/master/transform.PNG)
 
@@ -17,6 +17,7 @@ tradestat_multiprocessing_with_DB is a Python program to generate meaningful rep
 3) [xlsxwriter](https://pypi.org/project/XlsxWriter/)
 4) [openpyxl](https://openpyxl.readthedocs.io/en/stable/index.html)
 5) [multiprocessing](https://docs.python.org/3.8/library/multiprocessing.html)
+6) [sqlite3](https://docs.python.org/3/library/sqlite3.html)
 
 ### Folders/Files description:
 1) [C&SD_raw_data](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/tree/master/C%26SD_raw_data)
