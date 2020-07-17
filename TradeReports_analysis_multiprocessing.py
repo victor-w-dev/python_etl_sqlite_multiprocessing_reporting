@@ -14,7 +14,13 @@ from BSO.create_R1_periods import R1_periods
 from BSO.time_analysis import time_decorator
 
 class TradeReports(object):
-    """docstring for ."""
+    """
+    Acquire the data needed for certain periods
+
+    Parameters:
+    ----------
+    arg : periods
+    """
     _db_path = "merchandise_trades_DB"
 
     def __init__(self, periods):
@@ -55,7 +61,15 @@ class TradeReports(object):
         return cls.countries_info_df
 
 class CountryReport(object):
-    """docstring for ."""
+    """Analyse data for each country
+
+    Parameters:
+    ----------
+    all_trades_figures_dict : from all_trades_figures of TradeReports instance
+    periods_required
+    toprank = 10
+    country_code
+    """
     countryreport_counter = itertools.count(1)
     #@time_decorator
     def __init__(self, all_trades_figures_dict, periods_required, toprank = 10, country_code=None):
@@ -86,7 +100,7 @@ class CountryReport(object):
         # find out the periods not contained in df
         self._periods_lack = [p for p in self._periods_required if p not in periods_incl]
         return self._periods_lack
-
+    """
     #@time_decorator
     def TX_byproduct(self):
         '''
@@ -103,7 +117,7 @@ class CountryReport(object):
                   ascending=False)
 
         self.TX.to_excel("checking3_TX_China_bySITC3.xlsx")
-
+        """
     def trades_general_dict(self):
 
         fig = self.general_figures.loc[['TX','DX','RX','IM','RXbyO','TT','TB'],:].astype('int64')
