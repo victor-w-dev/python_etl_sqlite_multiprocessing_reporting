@@ -106,6 +106,7 @@ class TradeDB:
         print("You have connected to the database")
         print(self.con)
 
+    @time_decorator
     def check_report_period(self,table):
         self.cursor.execute(f"SELECT DISTINCT ReportPeriod FROM {table}")
         rows = self.cursor.fetchall()
@@ -132,10 +133,10 @@ class TradeDB:
                 line = line + [f'{year}{month}'] + [datetime.datetime.now()]
                 #print(line)
                 #print(len(line))
-                self.insert_line(table,*line)
+                self.insert_line(table, line)
             self.con.commit()
 
-    def insert_line(self, table, *values):
+    def insert_line(self, table, values):
         if table == "hsccit":
             column_str = """TransactionType, HScode, CountryConsignmentCode,
                             ImportValueMonthly,
@@ -204,11 +205,15 @@ if __name__ == '__main__':
     start = time.time()
     db = TradeDB()
 
+    print("Please wait a moment to extract existing periods, should be in seconds")
     db_exist_periods={'hsccit': db.check_report_period('hsccit'),
                       'hscoit': db.check_report_period('hscoit'),
                       'hscoccit': db.check_report_period('hscoccit')}
-    print(db_exist_periods)
+    # extract existing periods
+    for k, v in db_exist_periods.items():
+        print(k, v, '\n')
 
+    forward = input("randomly enter to go forward")
     importdataDB(db, db_exist_periods, startyear=2006, endyear=datetime.datetime.today().year)
 
     end = time.time()
