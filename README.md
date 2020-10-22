@@ -37,7 +37,6 @@ tradestat_multiprocessing_with_DB is a Python program to generate meaningful rep
 4) [trades_records_into_DB.py](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/trades_records_into_DB.py)
    insert all the commodity trade records for HK with other countries into sqlite database in the folder [merchandise_trades_DB](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/tree/master/merchandise_trades_DB)
    
-   ![the link not valid](https://raw.githubusercontent.com/v-w-dev/tradestat_multiprocessing_with_DB/master/merchandise_trades_DB/sqlite%20DB.PNG)
    ![the link not valid](https://raw.githubusercontent.com/v-w-dev/tradestat_multiprocessing_with_DB/master/merchandise_trades_DB/sqlite%20DB%20view.PNG)
     
    
