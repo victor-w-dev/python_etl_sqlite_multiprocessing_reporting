@@ -1,7 +1,7 @@
 # tradestat_multiprocessing_with_DB
 tradestat_multiprocessing_with_DB is a Python program to generate meaningful reports of HK's external merchandise trade statistics from numerical raw data issued by authorized department with object-oriented and multiprocessing concept, using SQLite as database.
 
-![link not valid](https://raw.githubusercontent.com/oda-developer/tradestat/master/transform.PNG)
+![link not valid](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/transform.PNG?raw=true)
 
 - 4 types of reports are provided
 - HK's external merchandise trade by currency (HKD, USD) and dollar units (thousand, million) with: 
