@@ -21,7 +21,7 @@ tradestat_multiprocessing_with_DB is a Python program to generate meaningful rep
 
 ### Folders/Files description:
 1) [C&SD_raw_data](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/tree/master/C%26SD_raw_data)
-   A few of periods of raw data in DAT format to demonstrate, and description file can be found
+   raw data not included in this github
    
 2) [Output](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/tree/master/Output)
    Full completed reports in Excel format as examples can be downloaded as demo
