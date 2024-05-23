@@ -1,5 +1,5 @@
 # python_etl_sqlite_multiprocessing_reporting
-python_etl_sqlite_multiprocessing_reporting is a Python program to generate meaningful reports of HK's external merchandise trade statistics from numerical raw semi-structured text data issued by authorized department with object-oriented and multiprocessing concept, using SQLite as database.
+python_etl_sqlite_multiprocessing_reporting is a Python program to generate meaningful reports of HK's external merchandise trade statistics from raw semi-structured data issued by authorized department with object-oriented and multiprocessing concept, using SQLite as database.
 
 ![link not valid](https://github.com/v-w-dev/tradestat_multiprocessing_with_DB/blob/master/transform.PNG?raw=true)
 
