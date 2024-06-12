@@ -9,42 +9,51 @@ db_path = "merchandise_trades_DB"
 
 def read_file(file_handler, table):
     for line in file_handler:
-        row = line.strip()
-        if table=='hsccit':
-            yield [(row[0]),
-                   row[1:9],
-                   row[9:12],
-                   row[12:30],
-                   row[30:48],
-                   row[48:66],
-                   row[66:84],
-                   row[84:102],
-                   row[102:120],
-                   row[120:138],
-                   row[138:156],
-                   row[156:174],
-                   row[174:192],
-                   row[192:210],
-                   row[210:228]]
-
-        if table=='hscoit':
-            yield [(row[0]),
-                   row[1:9],
-                   row[9:12],
-                   row[12:30],
-                   row[30:48],
-                   row[48:66],
-                   row[66:84]]
-
-        if table=='hscoccit':
-            yield [(row[0]),
-                   row[1:9],
-                   row[9:12],
-                   row[12:15],
-                   row[15:33],
-                   row[33:51],
-                   row[51:69],
-                   row[69:87]]
+        row = line.strip()      
+        if table == 'hsccit':
+            yield [
+                row[0],
+                row[1:9],
+                row[9:12],
+                row[12:30],
+                row[30:48],
+                row[48:66],
+                row[66:84],
+                row[84:102],
+                row[102:120],
+                row[120:138],
+                row[138:156],
+                row[156:174],
+                row[174:192],
+                row[192:210],
+                row[210:228]
+            ]
+        
+        elif table == 'hscoit':
+            yield [
+                row[0],
+                row[1:9],
+                row[9:12],
+                row[12:30],
+                row[30:48],
+                row[48:66],
+                row[66:84]
+            ]
+        
+        elif table == 'hscoccit':
+            yield [
+                row[0],
+                row[1:9],
+                row[9:12],
+                row[12:15],
+                row[15:33],
+                row[33:51],
+                row[51:69],
+                row[69:87]
+            ]
+        
+        else:
+            raise ValueError(f"Unknown table type: {table}")
 #@time_decorator
 class TradeDB:
     def __init__(self):
