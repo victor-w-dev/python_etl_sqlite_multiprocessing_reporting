@@ -101,11 +101,16 @@ python_etl_sqlite_multiprocessing_reporting is a Python program to generate mean
    This module performs multiprocessing by apply_async function to export Excel Reports.
    It run around 230 seconds to export 856 excel reports (0.27 seconds used per one) by following codes:
    ```Python
-   p = multiprocessing.Pool(processes = multiprocessing.cpu_count()) <br>
+   for row in reports.acquire_countries_info().itertuples():
+            try:
+                p.apply_async(CountryReport,(all_figs, periods, 10, row.CODE))
 
-   for row in reports.acquire_countries_info().itertuples(): <br>
-   &nbsp;&nbsp;try: <br>
-   &nbsp;&nbsp;&nbsp;&nbsp;p.apply_async(CountryReport,(all_figs, periods, 10, row.CODE)) <br>
-   p.close()<br>
-   p.join()<br>
+            except:
+                print(f"{row.CODE} {row.DESC} has error\n")
+                f = open(f"{row.CODE} {row.DESC}.txt", "w")
+                f.write(str(sys.exc_info()[0]))
+                f.write(str(sys.exc_info()[1]))
+                f.close()
+    p.close()
+    p.join()
    ```
